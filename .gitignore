@@ -1,0 +1,12 @@
+# 楽天アプリIDなどの秘密情報。絶対にコミットしない
+.env
+.env.local
+
+# 取得した生データ（大きい・再取得可能）
+/data/*.json
+!/data/.gitkeep
+
+node_modules/
+.wrangler/
+.DS_Store
+Thumbs.db

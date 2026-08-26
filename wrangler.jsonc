@@ -1,0 +1,10 @@
+{
+  // 静的アセットのみを配信する Worker。
+  // Worker スクリプト(main)は不要 —— assets-only Worker では main は省略可。
+  "name": "cost-performance-db",
+  "compatibility_date": "2026-08-26",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page"
+  }
+}

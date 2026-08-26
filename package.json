@@ -1,0 +1,14 @@
+{
+  "name": "cost-performance-db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test scripts/lib/parse.test.mjs",
+    "validate": "node scripts/validate.mjs",
+    "genres": "node scripts/discover-genres.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
