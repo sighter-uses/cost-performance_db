@@ -8,9 +8,20 @@ import { writeFileSync } from 'node:fs';
 
 try { process.loadEnvFile('.env'); } catch { /* .env が無ければ環境変数を使う */ }
 
-const APP_ID = process.env.RAKUTEN_APP_ID;
+const APP_ID = (process.env.RAKUTEN_APP_ID ?? '').trim();
 if (!APP_ID) {
   console.error('RAKUTEN_APP_ID が未設定です。.env.example を .env にコピーして記入してください。');
+  process.exit(1);
+}
+// applicationId は「10」から始まる数字列。シークレットやアフィリエイトIDとの取り違えが起きやすいので
+// APIを叩く前に弾く —— 400が返ってから原因を探すより、ここで理由を言うほうが速い。
+if (!/^[0-9]+$/.test(APP_ID)) {
+  const syms = [...new Set(APP_ID.replace(/[0-9a-zA-Z]/g, '').split(''))].join(' ');
+  console.error('RAKUTEN_APP_ID の形式が不正です。');
+  console.error(`  現在の値: ${APP_ID.length}文字 / 数字以外の文字を含む${syms ? ` (記号: ${syms})` : ''}`);
+  console.error('  applicationId は「10」から始まる数字だけの列です。');
+  console.error('  アプリケーションシークレット（UUID形式）やアフィリエイトID（ドット区切り）と');
+  console.error('  取り違えていないか、楽天のアプリ情報画面で確認してください。');
   process.exit(1);
 }
 
