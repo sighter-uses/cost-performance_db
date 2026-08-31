@@ -17,6 +17,7 @@ export function normalize(s) {
     .replace(/[－ー―‐]/g, '-')
     .replace(/[✕╳]/g, '×')
     .replace(/[゜ﾟ]/g, '°')   // 「20゜」の半濁点を度記号として扱う
+    .replace(/(\d),(\d)(?=\s*[%度°])/g, '$1.$2')  // 「39,1％」欧州式の小数点
     .replace(/([0-9a-zA-Z])\s*[x*]\s*(?=[0-9])/gi, '$1×')
     .replace(/\s+/g, ' ')
     .trim();
@@ -108,6 +109,24 @@ export function parseVolumeLoose(text) {
   return null;
 }
 
+/**
+ * 「45/700」形式を度数と容量の組として読む。輸入酒の専門店がよく使う表記で、
+ * 単位が一切書かれないため通常の抽出では取りこぼす。
+ * 度数として妥当な範囲かつ容量が規格サイズのときだけ採用する。
+ */
+export function parseAbvVolumePair(text) {
+  const s = normalize(text);
+  if (!s) return null;
+  const re = /(?<![\d.])(\d{2}(?:\.\d)?)\s*\/\s*(\d{3,4})(?![\d.])/g;
+  let hit;
+  while ((hit = re.exec(s)) !== null) {
+    const abv = parseFloat(hit[1]);
+    const vol = parseInt(hit[2], 10);
+    if (abv >= 15 && abv <= ABV_MAX && BOTTLE_SIZES.has(vol)) return { abv, volumeMl: vol };
+  }
+  return null;
+}
+
 /** セット本数を返す。単品なら 1。 */
 export function parseSetCount(text) {
   const s = normalize(text);
@@ -138,11 +157,14 @@ export function parseItem({ itemName, itemCaption = '', itemPrice }) {
   // 商品名を最優先する。店舗の説明文には他商品の記述（除菌用アルコール85%など）が
   // 混ざることがあり、そちらを拾うと商品名に「40度」と書いてあるのに85度と判定してしまう。
   // 誤った単価は、単価が出ないことより悪い。
-  const abv = parseAbv(itemName) ?? parseAbv(itemCaption);
+  // 「45/700」形式は度数と容量が不可分なので、両方欠けているときの最後の手段として使う。
+  const pair = parseAbvVolumePair(itemName);
+  const abv = parseAbv(itemName) ?? parseAbv(itemCaption) ?? pair?.abv ?? null;
   // 度数が取れている＝酒の商品説明である確度が高いときに限り、単位なし容量を許す
   const volumeMl =
     parseVolume(itemName) ??
     parseVolume(haystack) ??
+    pair?.volumeMl ??
     (abv !== null ? parseVolumeLoose(itemName) : null);
   const setCount = parseSetCount(itemName);
 

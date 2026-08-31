@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseAbv, parseVolume, parseVolumeLoose, parseSetCount, parseItem } from './parse.mjs';
+import { parseAbv, parseVolume, parseVolumeLoose, parseAbvVolumePair, parseSetCount, parseItem } from './parse.mjs';
 
 test('度数: ラベルなしの基本形', () => {
   assert.equal(parseAbv('サントリー ウイスキー 角瓶 40度 700ml'), 40);
@@ -142,4 +142,25 @@ test('度数: 商品名に無ければ商品説明から拾う', () => {
     itemPrice: 1680,
   });
   assert.equal(r.abv, 40);
+});
+
+test('度数: 欧州式の小数点カンマを読む', () => {
+  assert.equal(parseAbv('マルセル・トゥレプー 700ml 39,1％'), 39.1);
+  assert.equal(parseAbv('コニャック 40,5度 700ml'), 40.5);
+});
+
+test('度数: カンマ区切りの金額を度数と誤認しない', () => {
+  assert.equal(parseAbv('1,000円ポッキリ ウイスキー'), null);
+});
+
+test('度数と容量: 「45/700」形式を組として読む', () => {
+  const r = parseItem({ itemName: 'カポヴィッラ モンタナ ロッソ 10年 45/700 [正規輸入]', itemPrice: 12000 });
+  assert.equal(r.ok, true);
+  assert.equal(r.abv, 45);
+  assert.equal(r.volumeMl, 700);
+});
+
+test('度数と容量: 規格外の組み合わせは採用しない', () => {
+  assert.equal(parseAbvVolumePair('商品番号 45/123'), null);
+  assert.equal(parseAbvVolumePair('10/700'), null); // 度数として低すぎる
 });
