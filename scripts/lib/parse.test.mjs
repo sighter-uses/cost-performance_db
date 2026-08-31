@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseAbv, parseVolume, parseSetCount, parseItem } from './parse.mjs';
+import { parseAbv, parseVolume, parseVolumeLoose, parseSetCount, parseItem } from './parse.mjs';
 
 test('度数: ラベルなしの基本形', () => {
   assert.equal(parseAbv('サントリー ウイスキー 角瓶 40度 700ml'), 40);
@@ -91,4 +91,33 @@ test('統合: 抽出できなければ ok:false と理由を返す', () => {
   const b = parseItem({ itemName: 'ウイスキー 40度', itemPrice: 1000 });
   assert.equal(b.ok, false);
   assert.equal(b.reason, 'volume');
+});
+
+test('度数: 半濁点を度記号として扱う', () => {
+  assert.equal(parseAbv('吟香露（20゜）酒粕焼酎 1800ml'), 20);
+  assert.equal(parseAbv('本格焼酎 25゜ 720ml'), 25);
+});
+
+test('容量: 単位が落ちていても規格サイズなら拾う', () => {
+  const r = parseItem({ itemName: 'つくし白 麦焼酎 黒麹仕込 25度 1800', itemPrice: 2000 });
+  assert.equal(r.ok, true);
+  assert.equal(r.volumeMl, 1800);
+  assert.equal(r.abv, 25);
+});
+
+test('容量: 度数が無ければ裸の数値は容量とみなさない', () => {
+  const r = parseItem({ itemName: '日本酒 純米大吟醸 1800', itemPrice: 3000 });
+  assert.equal(r.ok, false);
+});
+
+test('容量: 規格外の裸の数値は拾わない', () => {
+  const r = parseItem({ itemName: '焼酎 25度 1234', itemPrice: 2000 });
+  assert.equal(r.ok, false);
+  assert.equal(r.reason, 'volume');
+});
+
+test('容量: 年号や価格を容量と誤認しない', () => {
+  assert.equal(parseVolumeLoose('2020年醸造'), null);
+  assert.equal(parseVolumeLoose('1800円'), null);
+  assert.equal(parseVolumeLoose('720本'), null);
 });

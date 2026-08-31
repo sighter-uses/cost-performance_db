@@ -16,6 +16,7 @@ export function normalize(s) {
     .replace(/[．]/g, '.')
     .replace(/[－ー―‐]/g, '-')
     .replace(/[✕╳]/g, '×')
+    .replace(/[゜ﾟ]/g, '°')   // 「20゜」の半濁点を度記号として扱う
     .replace(/([0-9a-zA-Z])\s*[x*]\s*(?=[0-9])/gi, '$1×')
     .replace(/\s+/g, ' ')
     .trim();
@@ -82,6 +83,26 @@ export function parseVolume(text) {
   return null;
 }
 
+// 単位が省略された容量の受け皿。日本の酒瓶は規格サイズがほぼ決まっているため、
+// その集合に一致する裸の数値のみを容量とみなす。範囲で受けると誤爆する。
+const BOTTLE_SIZES = new Set([180, 200, 300, 360, 500, 640, 700, 720, 750, 900, 1000, 1800, 2000, 2700, 4000, 5000]);
+
+/**
+ * 「25度 1800」のように単位が落ちている容量を拾う。
+ * 規格サイズに一致し、かつ他の単位が続かない数値だけを採用する。
+ */
+export function parseVolumeLoose(text) {
+  const s = normalize(text);
+  if (!s) return null;
+  const re = /(?<![\d.])(\d{3,4})(?![\d.])\s*(?![a-z年円個入本缶%°度])/gi;
+  let hit;
+  while ((hit = re.exec(s)) !== null) {
+    const v = parseInt(hit[1], 10);
+    if (BOTTLE_SIZES.has(v)) return v;
+  }
+  return null;
+}
+
 /** セット本数を返す。単品なら 1。 */
 export function parseSetCount(text) {
   const s = normalize(text);
@@ -110,7 +131,11 @@ export function parseItem({ itemName, itemCaption = '', itemPrice }) {
   const haystack = `${itemName} ${itemCaption}`;
 
   const abv = parseAbv(haystack);
-  const volumeMl = parseVolume(itemName) ?? parseVolume(haystack);
+  // 度数が取れている＝酒の商品説明である確度が高いときに限り、単位なし容量を許す
+  const volumeMl =
+    parseVolume(itemName) ??
+    parseVolume(haystack) ??
+    (abv !== null ? parseVolumeLoose(itemName) : null);
   const setCount = parseSetCount(itemName);
 
   if (abv === null || volumeMl === null) {
