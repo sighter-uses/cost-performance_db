@@ -61,6 +61,11 @@ export function parseAbv(text) {
 const VOL_MIN = 50;
 const VOL_MAX = 20000;
 
+// エタノールの比重。厚労省ガイドラインの純アルコール量の計算式に合わせる。
+export const ALCOHOL_DENSITY = 0.8;
+// 1単位あたりの純アルコール量(g)。日本酒1合、ビール中瓶1本にほぼ相当する。
+export const UNIT_GRAMS = 20;
+
 /** 1本あたりの容量を ml で返す。見つからなければ null。 */
 export function parseVolume(text) {
   const s = normalize(text);
@@ -130,7 +135,10 @@ export function parseSetCount(text) {
 export function parseItem({ itemName, itemCaption = '', itemPrice }) {
   const haystack = `${itemName} ${itemCaption}`;
 
-  const abv = parseAbv(haystack);
+  // 商品名を最優先する。店舗の説明文には他商品の記述（除菌用アルコール85%など）が
+  // 混ざることがあり、そちらを拾うと商品名に「40度」と書いてあるのに85度と判定してしまう。
+  // 誤った単価は、単価が出ないことより悪い。
+  const abv = parseAbv(itemName) ?? parseAbv(itemCaption);
   // 度数が取れている＝酒の商品説明である確度が高いときに限り、単位なし容量を許す
   const volumeMl =
     parseVolume(itemName) ??
@@ -142,11 +150,20 @@ export function parseItem({ itemName, itemCaption = '', itemPrice }) {
     return { ok: false, abv, volumeMl, setCount, reason: abv === null ? 'abv' : 'volume' };
   }
 
-  // 純アルコール量(ml) = 総容量 × 度数/100
+  // 純アルコール量(g) = 量(ml) × 度数/100 × 0.8（アルコール比重）
+  // 厚生労働省「健康に配慮した飲酒に関するガイドライン」(2024) と同じ式。
+  // 一般に流通している単位に合わせることで、表示された数値を他所と突き合わせられる。
   const totalMl = volumeMl * setCount;
-  const pureAlcoholMl = totalMl * (abv / 100);
-  const yenPerPureAlcoholMl =
-    typeof itemPrice === 'number' && pureAlcoholMl > 0 ? itemPrice / pureAlcoholMl : null;
+  const pureAlcoholG = totalMl * (abv / 100) * ALCOHOL_DENSITY;
 
-  return { ok: true, abv, volumeMl, setCount, totalMl, pureAlcoholMl, yenPerPureAlcoholMl };
+  const price = typeof itemPrice === 'number' ? itemPrice : null;
+  // 1単位 = 純アルコール20g（日本酒1合・ビール中瓶1本相当）。ml単価では桁が小さすぎて直感が働かない。
+  const yenPerUnit =
+    price !== null && pureAlcoholG > 0 ? (price / pureAlcoholG) * UNIT_GRAMS : null;
+  const yenPerMl = price !== null && totalMl > 0 ? price / totalMl : null;
+
+  return {
+    ok: true, abv, volumeMl, setCount, totalMl,
+    pureAlcoholG, yenPerUnit, yenPerMl,
+  };
 }

@@ -6,7 +6,10 @@
   "scripts": {
     "test": "node --test scripts/lib/parse.test.mjs",
     "validate": "node scripts/validate.mjs",
-    "genres": "node scripts/discover-genres.mjs"
+    "genres": "node scripts/discover-genres.mjs",
+    "fetch": "node scripts/fetch.mjs",
+    "build": "node scripts/build.mjs",
+    "update": "node scripts/fetch.mjs && node scripts/build.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.0.0"

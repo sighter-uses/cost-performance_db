@@ -68,8 +68,10 @@ test('統合: 純アルコール単価を算出する', () => {
   assert.equal(r.abv, 40);
   assert.equal(r.volumeMl, 700);
   assert.equal(r.setCount, 1);
-  assert.equal(r.pureAlcoholMl, 280);
-  assert.ok(Math.abs(r.yenPerPureAlcoholMl - 6) < 0.01);
+  // 700ml × 40% × 0.8 = 224g
+  assert.equal(r.pureAlcoholG, 224);
+  // 1680円 / 224g × 20g = 150円/単位
+  assert.ok(Math.abs(r.yenPerUnit - 150) < 0.01);
 });
 
 test('統合: セット品は総量で計算する', () => {
@@ -80,7 +82,8 @@ test('統合: セット品は総量で計算する', () => {
   assert.equal(r.ok, true);
   assert.equal(r.setCount, 12);
   assert.equal(r.totalMl, 8400);
-  assert.equal(r.pureAlcoholMl, 3360);
+  // 8400ml × 40% × 0.8 = 2688g
+  assert.equal(r.pureAlcoholG, 2688);
 });
 
 test('統合: 抽出できなければ ok:false と理由を返す', () => {
@@ -120,4 +123,23 @@ test('容量: 年号や価格を容量と誤認しない', () => {
   assert.equal(parseVolumeLoose('2020年醸造'), null);
   assert.equal(parseVolumeLoose('1800円'), null);
   assert.equal(parseVolumeLoose('720本'), null);
+});
+
+test('度数: 商品名を商品説明より優先する', () => {
+  // 店舗の説明文に別商品の記述が混ざるケース。商品名の40度が正しい。
+  const r = parseItem({
+    itemName: 'ウヰルキンソン ウォッカ 40度 720ml 正規',
+    itemCaption: '当店では除菌用アルコール85%も取り扱っております',
+    itemPrice: 778,
+  });
+  assert.equal(r.abv, 40);
+});
+
+test('度数: 商品名に無ければ商品説明から拾う', () => {
+  const r = parseItem({
+    itemName: 'サントリー 角瓶 700ml',
+    itemCaption: 'アルコール分40度のブレンデッドウイスキー',
+    itemPrice: 1680,
+  });
+  assert.equal(r.abv, 40);
 });
