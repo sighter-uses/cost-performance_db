@@ -9,49 +9,47 @@ import { writeFileSync } from 'node:fs';
 try { process.loadEnvFile('.env'); } catch { /* .env が無ければ環境変数を使う */ }
 
 const APP_ID = (process.env.RAKUTEN_APP_ID ?? '').trim();
-if (!APP_ID) {
-  console.error('RAKUTEN_APP_ID が未設定です。.env.example を .env にコピーして記入してください。');
-  process.exit(1);
-}
-// applicationId は「10」から始まる数字列。シークレットやアフィリエイトIDとの取り違えが起きやすいので
-// APIを叩く前に弾く —— 400が返ってから原因を探すより、ここで理由を言うほうが速い。
-if (!/^[0-9]+$/.test(APP_ID)) {
-  const syms = [...new Set(APP_ID.replace(/[0-9a-zA-Z]/g, '').split(''))].join(' ');
-  console.error('RAKUTEN_APP_ID の形式が不正です。');
-  console.error(`  現在の値: ${APP_ID.length}文字 / 数字以外の文字を含む${syms ? ` (記号: ${syms})` : ''}`);
-  console.error('  applicationId は「10」から始まる数字だけの列です。');
-  console.error('  アプリケーションシークレット（UUID形式）やアフィリエイトID（ドット区切り）と');
-  console.error('  取り違えていないか、楽天のアプリ情報画面で確認してください。');
+const ACCESS_KEY = (process.env.RAKUTEN_ACCESS_KEY ?? '').trim();
+
+// 2026年の仕様変更で applicationId(UUID) と accessKey の両方が必須になった。
+// 片方だけだと HTTP 400 になるので、叩く前に理由を言う。
+const missing = [
+  !APP_ID && 'RAKUTEN_APP_ID',
+  !ACCESS_KEY && 'RAKUTEN_ACCESS_KEY',
+].filter(Boolean);
+if (missing.length) {
+  console.error(`${missing.join(' と ')} が未設定です。`);
+  console.error('楽天のアプリ情報画面にある「アプリケーションID」と「アクセスキー」を');
+  console.error('.env に記入してください（.env.example を参照）。');
   process.exit(1);
 }
 
-const API = 'https://app.rakuten.co.jp/services/api/IchibaItem/Search/20220601';
-const GENRE_API = 'https://app.rakuten.co.jp/services/api/IchibaGenre/Search/20140222';
+const ITEM_API  = 'https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20260701';
+const GENRE_API = 'https://openapi.rakuten.co.jp/ichibagt/api/IchibaGenre/Search/20260701';
 const TARGET = Number(process.argv[2] ?? 1000);
-const HITS = 30;                    // APIの1ページあたり上限
-const INTERVAL_MS = 1200;           // レート制限回避
+const HITS = 30;          // APIの1ページあたり上限
+const INTERVAL_MS = 1200; // レート制限回避
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-async function call(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText} — ${await res.text()}`);
-  return res.json();
+function auth(params) {
+  return new URLSearchParams({ applicationId: APP_ID, accessKey: ACCESS_KEY, format: 'json', ...params });
+}
+
+async function call(base, params) {
+  const res = await fetch(`${base}?${auth(params)}`);
+  const body = await res.text();
+  if (!res.ok) throw new Error(`HTTP ${res.status} — ${body.slice(0, 300)}`);
+  return JSON.parse(body);
 }
 
 /** 酒類のジャンルIDをルートから探索する（IDをハードコードしない） */
 async function findLiquorGenres() {
-  const root = await call(`${GENRE_API}?applicationId=${APP_ID}&genreId=0&format=json`);
-  const children = root.children ?? [];
-  const matched = children
-    .map(c => c.child)
-    .filter(g => /酒|ビール|洋酒|ワイン/.test(g.genreName));
-  return matched;
-}
-
-async function fetchPage(genreId, page) {
-  const url = `${API}?applicationId=${APP_ID}&genreId=${genreId}&hits=${HITS}&page=${page}&format=json`;
-  return call(url);
+  const root = await call(GENRE_API, { genreId: '0' });
+  const children = (root.children ?? []).map(c => c.child ?? c);
+  return children
+    .map(g => ({ id: g.genreId, name: g.nameJa ?? g.genreName ?? '' }))
+    .filter(g => /酒|ビール|洋酒|ワイン/.test(g.name));
 }
 
 const genres = await findLiquorGenres();
@@ -59,29 +57,43 @@ if (genres.length === 0) {
   console.error('酒類ジャンルが見つかりませんでした。ジャンル構成が変わった可能性があります。');
   process.exit(1);
 }
-console.log('対象ジャンル:', genres.map(g => `${g.genreName}(${g.genreId})`).join(', '));
+console.log('対象ジャンル:', genres.map(g => `${g.name}(${g.id})`).join(', '));
 console.log('');
 
 const items = [];
+let shapeLogged = false;
+
 outer:
 for (const g of genres) {
   for (let page = 1; page <= 100; page++) {
     let json;
     try {
-      json = await fetchPage(g.genreId, page);
+      json = await call(ITEM_API, { genreId: String(g.id), hits: String(HITS), page: String(page) });
     } catch (e) {
-      console.error(`  取得失敗 genre=${g.genreId} page=${page}: ${e.message}`);
+      console.error(`\n  取得失敗 genre=${g.id} page=${page}: ${e.message}`);
       break;
     }
-    const batch = (json.Items ?? []).map(x => x.Item ?? x);
-    if (batch.length === 0) break;
-    items.push(...batch.map(it => ({ ...it, _genre: g.genreName })));
+    const batch = (json.Items ?? json.items ?? []).map(x => x.Item ?? x);
+    if (batch.length === 0) {
+      // 応答構造が変わっている可能性。一度だけ最上位キーを出して診断できるようにする
+      if (!shapeLogged) {
+        console.error('\n  商品が0件。応答の最上位キー:', Object.keys(json).join(', '));
+        shapeLogged = true;
+      }
+      break;
+    }
+    items.push(...batch.map(it => ({ ...it, _genre: g.name })));
     process.stdout.write(`\r取得中: ${items.length} / ${TARGET} 件`);
     if (items.length >= TARGET) break outer;
     await sleep(INTERVAL_MS);
   }
 }
 console.log('\n');
+
+if (items.length === 0) {
+  console.error('商品を1件も取得できませんでした。認証かエンドポイントを確認してください。');
+  process.exit(1);
+}
 
 // ---- 解析 ----
 let ok = 0;
@@ -90,16 +102,16 @@ const results = [];
 
 for (const it of items) {
   const r = parseItem({
-    itemName: it.itemName,
-    itemCaption: it.itemCaption,
-    itemPrice: it.itemPrice,
+    itemName: it.itemName ?? it.name ?? '',
+    itemCaption: it.itemCaption ?? it.caption ?? '',
+    itemPrice: it.itemPrice ?? it.price,
   });
-  results.push({ itemName: it.itemName, itemPrice: it.itemPrice, genre: it._genre, ...r });
+  results.push({ itemName: it.itemName ?? it.name, itemPrice: it.itemPrice ?? it.price, genre: it._genre, ...r });
   if (r.ok) ok++;
-  else failed[r.reason].push(it.itemName);
+  else failed[r.reason].push(it.itemName ?? it.name ?? '(名称なし)');
 }
 
-const rate = items.length ? (ok / items.length) * 100 : 0;
+const rate = (ok / items.length) * 100;
 
 console.log('='.repeat(56));
 console.log(`  総件数        ${items.length}`);
