@@ -1,0 +1,163 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,600&family=Murecho:wght@400;500;700&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #e0a86a; text-decoration: none; }
+    a:hover { color: #f2c48c; text-decoration: underline; }
+    @keyframes draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+    @keyframes turn { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    .rosette { transform-origin: 400px 400px; animation: turn 240s linear infinite; }
+    .rosette ellipse { stroke-dasharray: 1; animation: draw 4.2s cubic-bezier(.22,.61,.36,1) both; }
+    .rosette ellipse:nth-child(2n) { animation-delay: .24s; }
+    .col-in { animation: rise 1s cubic-bezier(.22,.61,.36,1) both; }
+    @media (prefers-reduced-motion: reduce) {
+      .rosette, .rosette ellipse, .col-in { animation: none; }
+      .rosette ellipse { stroke-dashoffset: 0; }
+    }
+  </style>
+</helmet>
+
+<div style="position: relative; overflow: hidden; min-height: 800px; background: #100c09;
+  font-family: Murecho, 'Hiragino Sans', sans-serif; color: #f0e7dc;">
+
+  <div style="position: absolute; width: 640px; height: 640px; left: -200px; top: -240px;
+    background: radial-gradient(circle, rgba(196,124,54,.34), rgba(196,124,54,0) 66%); filter: blur(14px);"></div>
+  <svg viewBox="0 0 800 800" aria-hidden="true"
+    style="position: absolute; right: -280px; bottom: -300px; width: 760px; height: 760px; opacity: .3; pointer-events: none;">
+    <g class="rosette" fill="none" stroke="#5e8e7c" stroke-width="0.7">
+      <ellipse pathLength="1" cx="400" cy="400" rx="320" ry="112" transform="rotate(0 400 400)"/>
+      <ellipse pathLength="1" cx="400" cy="400" rx="320" ry="112" transform="rotate(22 400 400)"/>
+      <ellipse pathLength="1" cx="400" cy="400" rx="320" ry="112" transform="rotate(44 400 400)"/>
+      <ellipse pathLength="1" cx="400" cy="400" rx="320" ry="112" transform="rotate(66 400 400)"/>
+      <ellipse pathLength="1" cx="400" cy="400" rx="320" ry="112" transform="rotate(88 400 400)"/>
+      <ellipse pathLength="1" cx="400" cy="400" rx="320" ry="112" transform="rotate(110 400 400)"/>
+      <ellipse pathLength="1" cx="400" cy="400" rx="320" ry="112" transform="rotate(132 400 400)"/>
+      <ellipse pathLength="1" cx="400" cy="400" rx="320" ry="112" transform="rotate(154 400 400)"/>
+    </g>
+  </svg>
+  <div style="position: absolute; inset: 0; opacity: .46; mix-blend-mode: overlay; pointer-events: none;
+    background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='.42'/%3E%3C/svg%3E&quot;);"></div>
+
+  <div style="position: relative; padding: 40px 34px 44px; display: flex; flex-direction: column; gap: 26px;">
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <span style="font-size: 11px; letter-spacing: .28em; color: #c47c36;">最大4銘柄</span>
+      <h2 style="margin: 0; font-size: 27px; font-weight: 700; line-height: 1.35;">選んだ銘柄を横に並べる</h2>
+      <p style="margin: 0; font-size: 13px; line-height: 1.9; color: #b6a898; max-width: 42rem;">
+        一覧で気になった銘柄をチェックすると、ここに積み上がります。各行で最も有利な値に色をつけるので、
+        どこで差がついているかが一目で分かります。</p>
+    </div>
+
+    <!-- 狭い画面では横スクロールに逃がす -->
+    <div style="overflow-x: auto;">
+      <div style="min-width: 900px; display: grid; grid-template-columns: 120px repeat(4, minmax(0, 1fr)); gap: 12px;">
+
+        <div></div>
+        <div class="col-in" style="animation-delay:.56s; padding: 18px 18px 16px; border-radius: 16px;
+          background: rgba(240,231,220,.055); border: 1px solid rgba(240,231,220,.1);
+          display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+            <span style="font-size: 10px; letter-spacing: .2em; color: #857a6e;">A</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#857a6e" stroke-width="2" style="cursor: pointer;">
+              <path d="M6 6l12 12M18 6L6 18"/></svg></div>
+          <span style="font-size: 13px; font-weight: 500; line-height: 1.55;">むぎ焼酎 すごむぎ 1.8L×6本 合同酒精</span>
+          <span style="font-size: 11px; color: #857a6e;">焼酎</span>
+        </div>
+        <div class="col-in" style="animation-delay:.72s; padding: 18px 18px 16px; border-radius: 16px;
+          background: rgba(240,231,220,.055); border: 1px solid rgba(240,231,220,.1);
+          display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+            <span style="font-size: 10px; letter-spacing: .2em; color: #857a6e;">B</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#857a6e" stroke-width="2" style="cursor: pointer;">
+              <path d="M6 6l12 12M18 6L6 18"/></svg></div>
+          <span style="font-size: 13px; font-weight: 500; line-height: 1.55;">ウィルキンソン ウォッカ 40度 1800ml</span>
+          <span style="font-size: 11px; color: #857a6e;">ウォッカ</span>
+        </div>
+        <div class="col-in" style="animation-delay:.88s; padding: 18px 18px 16px; border-radius: 16px;
+          background: rgba(240,231,220,.055); border: 1px solid rgba(240,231,220,.1);
+          display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+            <span style="font-size: 10px; letter-spacing: .2em; color: #857a6e;">C</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#857a6e" stroke-width="2" style="cursor: pointer;">
+              <path d="M6 6l12 12M18 6L6 18"/></svg></div>
+          <span style="font-size: 13px; font-weight: 500; line-height: 1.55;">焼酎 こくいも 25度 芋焼酎 6本セット</span>
+          <span style="font-size: 11px; color: #857a6e;">焼酎</span>
+        </div>
+        <div class="col-in" style="animation-delay:1.04s; padding: 18px; border-radius: 16px;
+          border: 1px dashed rgba(240,231,220,.2); display: flex; flex-direction: column;
+          align-items: center; justify-content: center; gap: 10px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#857a6e" stroke-width="1.5">
+            <path d="M12 5v14M5 12h14"/></svg>
+          <span style="font-size: 11.5px; color: #857a6e; text-align: center; line-height: 1.6;">一覧から<br>4件目を追加</span>
+        </div>
+
+        <div style="padding: 14px 0; font-size: 11px; letter-spacing: .14em; color: #857a6e; align-self: center;">20g単価</div>
+        <div style="padding: 12px 18px; border-radius: 12px; background: rgba(224,168,106,.11);">
+          <span style="font-family: Fraunces, Georgia, serif; font-size: 28px; font-weight: 600; color: #e0a86a;">55.5</span></div>
+        <div style="padding: 12px 18px;">
+          <span style="font-family: Fraunces, Georgia, serif; font-size: 28px; font-weight: 300; color: #b6a898;">59.9</span></div>
+        <div style="padding: 12px 18px;">
+          <span style="font-family: Fraunces, Georgia, serif; font-size: 28px; font-weight: 300; color: #b6a898;">62.9</span></div>
+        <div></div>
+
+        <div style="padding: 14px 0; font-size: 11px; letter-spacing: .14em; color: #857a6e; align-self: center;">評価</div>
+        <div style="padding: 12px 18px; font-size: 14px; color: #b6a898;">4.88 <span style="font-size: 11px; color: #857a6e;">183件</span></div>
+        <div style="padding: 12px 18px; font-size: 14px; color: #b6a898;">4.86 <span style="font-size: 11px; color: #857a6e;">81件</span></div>
+        <div style="padding: 12px 18px; border-radius: 12px; background: rgba(127,192,168,.11);
+          font-size: 14px; color: #7fc0a8;">4.92 <span style="font-size: 11px; color: #857a6e;">391件</span></div>
+        <div></div>
+
+        <div style="padding: 14px 0; font-size: 11px; letter-spacing: .14em; color: #857a6e; align-self: center;">度数</div>
+        <div style="padding: 12px 18px; font-size: 14px; color: #b6a898;">25度</div>
+        <div style="padding: 12px 18px; font-size: 14px; color: #b6a898;">40度</div>
+        <div style="padding: 12px 18px; font-size: 14px; color: #b6a898;">25度</div>
+        <div></div>
+
+        <div style="padding: 14px 0; font-size: 11px; letter-spacing: .14em; color: #857a6e; align-self: center;">容量</div>
+        <div style="padding: 12px 18px; font-size: 14px; color: #b6a898;">1800ml × 6本</div>
+        <div style="padding: 12px 18px; font-size: 14px; color: #b6a898;">1800ml</div>
+        <div style="padding: 12px 18px; font-size: 14px; color: #b6a898;">1800ml × 6本</div>
+        <div></div>
+
+        <div style="padding: 14px 0; font-size: 11px; letter-spacing: .14em; color: #857a6e; align-self: center;">純アルコール</div>
+        <div style="padding: 12px 18px; font-size: 14px; color: #b6a898;">2,160 g</div>
+        <div style="padding: 12px 18px; font-size: 14px; color: #b6a898;">576 g</div>
+        <div style="padding: 12px 18px; font-size: 14px; color: #b6a898;">2,160 g</div>
+        <div></div>
+
+        <div style="padding: 14px 0; font-size: 11px; letter-spacing: .14em; color: #857a6e; align-self: center;">総額</div>
+        <div style="padding: 12px 18px; font-size: 14px; color: #b6a898;">5,998円</div>
+        <div style="padding: 12px 18px; border-radius: 12px; background: rgba(224,168,106,.11);
+          font-size: 14px; color: #e0a86a;">1,724円</div>
+        <div style="padding: 12px 18px; font-size: 14px; color: #b6a898;">6,795円</div>
+        <div></div>
+
+        <div></div>
+        <div style="padding: 6px 0;"><a href="#" style="display: block; text-align: center; padding: 11px;
+          border-radius: 999px; background: #e0a86a; color: #100c09; font-size: 13px; font-weight: 700;">楽天で見る</a></div>
+        <div style="padding: 6px 0;"><a href="#" style="display: block; text-align: center; padding: 11px;
+          border-radius: 999px; background: #e0a86a; color: #100c09; font-size: 13px; font-weight: 700;">楽天で見る</a></div>
+        <div style="padding: 6px 0;"><a href="#" style="display: block; text-align: center; padding: 11px;
+          border-radius: 999px; background: #e0a86a; color: #100c09; font-size: 13px; font-weight: 700;">楽天で見る</a></div>
+        <div></div>
+
+      </div>
+    </div>
+
+    <p style="margin: 0; font-size: 12px; line-height: 1.9; color: #857a6e;">
+      スマートフォンでは表がそのまま横スクロールになり、左端の項目名だけが固定されます。
+      縦積みに崩す案もありますが、比較は横に並んでいないと成立しないため、スクロールを選んでいます。</p>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

@@ -10,3 +10,6 @@ node_modules/
 .wrangler/
 .DS_Store
 Thumbs.db
+
+# デザインキャンバスの生成物（作業ファイルから再生成できる）
+/design/shuryu-hikaku-design.html

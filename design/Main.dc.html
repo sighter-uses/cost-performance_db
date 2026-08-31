@@ -1,0 +1,192 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,600&family=Murecho:wght@400;500;700&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #e0a86a; text-decoration: none; }
+    a:hover { color: #f2c48c; text-decoration: underline; }
+
+    /* ギヨシェ紋を動きの主役にする。線が引かれ、以後ゆっくり回り続ける。
+       重ねた楕円が回転で干渉を起こし、液体を透過した光の揺らぎとして読める。 */
+    @keyframes draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+    @keyframes turn { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes breathe {
+      0%, 100% { opacity: .30; transform: scale(1); }
+      50%      { opacity: .46; transform: scale(1.035); }
+    }
+    @keyframes swell {
+      0%, 100% { transform: translate(0, 0) scale(1); opacity: .5; }
+      50%      { transform: translate(2.5%, -2%) scale(1.07); opacity: .74; }
+    }
+    /* 行の立ち上がりも紋と同じ間合いで。動きの数は増やさず、拍だけ揃える。 */
+    @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+    .rosette { transform-origin: 400px 400px; animation: turn 240s linear infinite; }
+    .rosette ellipse, .rosette circle {
+      stroke-dasharray: 1; animation: draw 4.2s cubic-bezier(.22,.61,.36,1) both;
+    }
+    .rosette ellipse:nth-child(2n) { animation-delay: .24s; }
+    .rosette ellipse:nth-child(3n) { animation-delay: .48s; }
+    .rosette circle { animation-delay: .75s; }
+    .halo { animation: breathe 26s ease-in-out infinite; }
+    .glow { animation: swell 22s ease-in-out infinite; }
+    .glow2 { animation: swell 30s ease-in-out infinite reverse; }
+    .row-in { animation: rise 1s cubic-bezier(.22,.61,.36,1) both; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .rosette, .rosette ellipse, .rosette circle, .halo, .glow, .glow2, .row-in { animation: none; }
+      .rosette ellipse, .rosette circle { stroke-dashoffset: 0; }
+    }
+  </style>
+</helmet>
+
+<div style="position: relative; overflow: hidden; min-height: 1100px; background: #100c09;
+  font-family: Murecho, 'Hiragino Sans', sans-serif; color: #f0e7dc;">
+
+  <!-- 琥珀と緑青の光の層 -->
+  <div class="glow" style="position: absolute; width: 760px; height: 760px; left: -200px; top: -230px;
+    background: radial-gradient(circle, rgba(196,124,54,.46), rgba(196,124,54,0) 66%); filter: blur(12px);"></div>
+  <div class="glow2" style="position: absolute; width: 620px; height: 620px; right: -180px; top: 380px;
+    background: radial-gradient(circle, rgba(94,142,124,.3), rgba(94,142,124,0) 68%); filter: blur(16px);"></div>
+
+  <!-- ギヨシェ紋 -->
+  <svg class="halo" viewBox="0 0 800 800" aria-hidden="true"
+    style="position: absolute; right: -230px; top: -180px; width: 880px; height: 880px; pointer-events: none;">
+    <g class="rosette" fill="none" stroke="#c47c36" stroke-width="0.75">
+      <ellipse pathLength="1" cx="400" cy="400" rx="330" ry="118" transform="rotate(0 400 400)"/>
+      <ellipse pathLength="1" cx="400" cy="400" rx="330" ry="118" transform="rotate(15 400 400)"/>
+      <ellipse pathLength="1" cx="400" cy="400" rx="330" ry="118" transform="rotate(30 400 400)"/>
+      <ellipse pathLength="1" cx="400" cy="400" rx="330" ry="118" transform="rotate(45 400 400)"/>
+      <ellipse pathLength="1" cx="400" cy="400" rx="330" ry="118" transform="rotate(60 400 400)"/>
+      <ellipse pathLength="1" cx="400" cy="400" rx="330" ry="118" transform="rotate(75 400 400)"/>
+      <ellipse pathLength="1" cx="400" cy="400" rx="330" ry="118" transform="rotate(90 400 400)"/>
+      <ellipse pathLength="1" cx="400" cy="400" rx="330" ry="118" transform="rotate(105 400 400)"/>
+      <ellipse pathLength="1" cx="400" cy="400" rx="330" ry="118" transform="rotate(120 400 400)"/>
+      <ellipse pathLength="1" cx="400" cy="400" rx="330" ry="118" transform="rotate(135 400 400)"/>
+      <ellipse pathLength="1" cx="400" cy="400" rx="330" ry="118" transform="rotate(150 400 400)"/>
+      <ellipse pathLength="1" cx="400" cy="400" rx="330" ry="118" transform="rotate(165 400 400)"/>
+      <circle pathLength="1" cx="400" cy="400" r="238" stroke="#5e8e7c"/>
+      <circle pathLength="1" cx="400" cy="400" r="158" stroke="#5e8e7c"/>
+    </g>
+  </svg>
+
+  <!-- 粒状ノイズ。面に肌理を与える。 -->
+  <div style="position: absolute; inset: 0; opacity: .46; mix-blend-mode: overlay; pointer-events: none;
+    background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='.42'/%3E%3C/svg%3E&quot;);"></div>
+
+  <div style="position: relative; padding: 54px 44px 60px; display: flex; flex-direction: column; gap: 32px;">
+
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <span style="font-size: 11px; letter-spacing: .28em; color: #c47c36;">純アルコール 20g ／ 日本酒1合 相当</span>
+      <h1 style="margin: 0; font-size: 42px; font-weight: 700; line-height: 1.28; letter-spacing: .02em;">蒸留酒 単価一覧</h1>
+      <p style="margin: 0; max-width: 31rem; font-size: 14px; line-height: 2; color: #b6a898;">
+        価格も度数も容量もバラバラな蒸留酒2,515本を、純アルコール20gあたりいくらかという同じ物差しに載せました。
+        商品名と説明文から度数と容量を機械的に読み取っており、読み取れなかった商品は載せていません。</p>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 26px; padding: 18px 0; border-top: 1px solid rgba(240,231,220,.12);
+      border-bottom: 1px solid rgba(240,231,220,.12);">
+      <div style="display: flex; flex-direction: column; gap: 3px;">
+        <span style="font-size: 10px; letter-spacing: .18em; color: #857a6e;">掲載</span>
+        <span style="font-family: Fraunces, Georgia, serif; font-size: 22px; font-weight: 600;">2,515</span></div>
+      <div style="display: flex; flex-direction: column; gap: 3px;">
+        <span style="font-size: 10px; letter-spacing: .18em; color: #857a6e;">評価あり</span>
+        <span style="font-family: Fraunces, Georgia, serif; font-size: 22px; font-weight: 600; color: #7fc0a8;">1,118</span></div>
+      <div style="display: flex; flex-direction: column; gap: 3px;">
+        <span style="font-size: 10px; letter-spacing: .18em; color: #857a6e;">最安</span>
+        <span style="font-family: Fraunces, Georgia, serif; font-size: 22px; font-weight: 600; color: #e0a86a;">55.5</span></div>
+      <div style="display: flex; flex-direction: column; gap: 3px;">
+        <span style="font-size: 10px; letter-spacing: .18em; color: #857a6e;">取得</span>
+        <span style="font-family: Fraunces, Georgia, serif; font-size: 22px; font-weight: 600;">9/1</span></div>
+    </div>
+
+    <div style="display: flex; gap: 10px;">
+      <button style="flex: 1; padding: 13px; font-family: Murecho, sans-serif; font-size: 14px; font-weight: 700;
+        border-radius: 999px; background: #e0a86a; color: #100c09; border: 0; cursor: pointer;">安さ優先</button>
+      <button style="flex: 1; padding: 13px; font-family: Murecho, sans-serif; font-size: 14px;
+        border-radius: 999px; background: rgba(240,231,220,.07); color: #b6a898;
+        border: 1px solid rgba(240,231,220,.14); cursor: pointer;">コスパ優先</button>
+      <button style="flex: 1; padding: 13px; font-family: Murecho, sans-serif; font-size: 14px;
+        border-radius: 999px; background: rgba(240,231,220,.07); color: #b6a898;
+        border: 1px solid rgba(240,231,220,.14); cursor: pointer;">評価優先</button>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+
+      <div class="row-in" style="animation-delay: .56s; padding: 22px 24px; border-radius: 16px;
+        background: rgba(240,231,220,.055); border: 1px solid rgba(240,231,220,.1);
+        display: flex; gap: 22px; align-items: center;">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0;">
+          <a href="#" style="font-size: 16px; font-weight: 500; line-height: 1.5;">むぎ焼酎 すごむぎ 1.8L×6本 25% 合同酒精</a>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12px; color: #b6a898;">
+            <span style="color: #7fc0a8;">★ 4.88 <span style="color: #857a6e;">183件</span></span>
+            <span>25度</span><span>1800ml × 6本</span><span>5,998円</span></div>
+        </div>
+        <div style="text-align: right; flex: none;">
+          <div style="font-family: Fraunces, Georgia, serif; font-size: 40px; font-weight: 600; color: #e0a86a; line-height: 1;">55.5</div>
+          <div style="font-size: 10px; letter-spacing: .16em; color: #857a6e; margin-top: 6px;">円 / 20g</div>
+        </div>
+      </div>
+
+      <div class="row-in" style="animation-delay: .74s; padding: 22px 24px; border-radius: 16px;
+        background: rgba(240,231,220,.055); border: 1px solid rgba(240,231,220,.1);
+        display: flex; gap: 22px; align-items: center;">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0;">
+          <a href="#" style="font-size: 16px; font-weight: 500; line-height: 1.5;">ウィルキンソン ウォッカ 40度 正規 1800ml</a>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12px; color: #b6a898;">
+            <span style="color: #7fc0a8;">★ 4.86 <span style="color: #857a6e;">81件</span></span>
+            <span>40度</span><span>1800ml</span><span>1,724円</span></div>
+        </div>
+        <div style="text-align: right; flex: none;">
+          <div style="font-family: Fraunces, Georgia, serif; font-size: 40px; font-weight: 600; color: #e0a86a; line-height: 1;">59.9</div>
+          <div style="font-size: 10px; letter-spacing: .16em; color: #857a6e; margin-top: 6px;">円 / 20g</div>
+        </div>
+      </div>
+
+      <div class="row-in" style="animation-delay: .92s; padding: 22px 24px; border-radius: 16px;
+        background: rgba(240,231,220,.055); border: 1px solid rgba(240,231,220,.1);
+        display: flex; gap: 22px; align-items: center;">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0;">
+          <a href="#" style="font-size: 16px; font-weight: 500; line-height: 1.5;">焼酎 こくいも 25度 芋焼酎 1.8L パック 6本セット</a>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12px; color: #b6a898;">
+            <span style="color: #7fc0a8;">★ 4.92 <span style="color: #857a6e;">391件</span></span>
+            <span>25度</span><span>1800ml × 6本</span><span>6,795円</span></div>
+        </div>
+        <div style="text-align: right; flex: none;">
+          <div style="font-family: Fraunces, Georgia, serif; font-size: 40px; font-weight: 600; color: #e0a86a; line-height: 1;">62.9</div>
+          <div style="font-size: 10px; letter-spacing: .16em; color: #857a6e; margin-top: 6px;">円 / 20g</div>
+        </div>
+      </div>
+
+      <div class="row-in" style="animation-delay: 1.10s; padding: 22px 24px; border-radius: 16px;
+        background: rgba(240,231,220,.055); border: 1px solid rgba(240,231,220,.1);
+        display: flex; gap: 22px; align-items: center;">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0;">
+          <a href="#" style="font-size: 16px; font-weight: 500; line-height: 1.5;">ウィルキンソン ウォッカ 1800ml×6本</a>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12px; color: #b6a898;">
+            <span style="color: #7fc0a8;">★ 4.85 <span style="color: #857a6e;">54件</span></span>
+            <span>40度</span><span>1800ml × 6本</span><span>10,998円</span></div>
+        </div>
+        <div style="text-align: right; flex: none;">
+          <div style="font-family: Fraunces, Georgia, serif; font-size: 40px; font-weight: 600; color: #e0a86a; line-height: 1;">63.6</div>
+          <div style="font-size: 10px; letter-spacing: .16em; color: #857a6e; margin-top: 6px;">円 / 20g</div>
+        </div>
+      </div>
+
+    </div>
+
+    <p style="margin: 0; font-size: 12px; line-height: 1.9; color: #857a6e;">
+      ギヨシェ紋が2.8秒かけて描かれ、以後150秒で一周し続けます。重ねた楕円が回転で干渉を起こすので、
+      静止画では出せない揺らぎが地に生まれます。行の立ち上がりは紋の描画と同じイージングで、拍だけ揃えています。</p>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

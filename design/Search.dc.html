@@ -1,0 +1,159 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,600&family=Murecho:wght@400;500;700&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #e0a86a; text-decoration: none; }
+    a:hover { color: #f2c48c; text-decoration: underline; }
+    input::placeholder { color: #857a6e; }
+    input:focus { outline: 2px solid #e0a86a; outline-offset: 3px; }
+    @keyframes draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+    @keyframes turn { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .rosette { transform-origin: 400px 400px; animation: turn 240s linear infinite; }
+    .rosette ellipse { stroke-dasharray: 1; animation: draw 4.2s cubic-bezier(.22,.61,.36,1) both; }
+    .rosette ellipse:nth-child(2n) { animation-delay: .24s; }
+    @media (prefers-reduced-motion: reduce) {
+      .rosette, .rosette ellipse { animation: none; }
+      .rosette ellipse { stroke-dashoffset: 0; }
+    }
+  </style>
+</helmet>
+
+<div style="position: relative; overflow: hidden; min-height: 800px; background: #100c09;
+  font-family: Murecho, 'Hiragino Sans', sans-serif; color: #f0e7dc;">
+
+  <div style="position: absolute; width: 620px; height: 620px; right: -180px; top: -220px;
+    background: radial-gradient(circle, rgba(196,124,54,.36), rgba(196,124,54,0) 66%); filter: blur(14px);"></div>
+  <svg viewBox="0 0 800 800" aria-hidden="true"
+    style="position: absolute; left: -300px; bottom: -320px; width: 760px; height: 760px; opacity: .28; pointer-events: none;">
+    <g class="rosette" fill="none" stroke="#c47c36" stroke-width="0.7">
+      <ellipse pathLength="1" cx="400" cy="400" rx="320" ry="112" transform="rotate(0 400 400)"/>
+      <ellipse pathLength="1" cx="400" cy="400" rx="320" ry="112" transform="rotate(22 400 400)"/>
+      <ellipse pathLength="1" cx="400" cy="400" rx="320" ry="112" transform="rotate(44 400 400)"/>
+      <ellipse pathLength="1" cx="400" cy="400" rx="320" ry="112" transform="rotate(66 400 400)"/>
+      <ellipse pathLength="1" cx="400" cy="400" rx="320" ry="112" transform="rotate(88 400 400)"/>
+      <ellipse pathLength="1" cx="400" cy="400" rx="320" ry="112" transform="rotate(110 400 400)"/>
+      <ellipse pathLength="1" cx="400" cy="400" rx="320" ry="112" transform="rotate(132 400 400)"/>
+      <ellipse pathLength="1" cx="400" cy="400" rx="320" ry="112" transform="rotate(154 400 400)"/>
+    </g>
+  </svg>
+  <div style="position: absolute; inset: 0; opacity: .46; mix-blend-mode: overlay; pointer-events: none;
+    background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='.42'/%3E%3C/svg%3E&quot;);"></div>
+
+  <div style="position: relative; padding: 40px 34px 44px; display: flex; flex-direction: column; gap: 22px;">
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <span style="font-size: 11px; letter-spacing: .28em; color: #c47c36;">銘柄で絞る</span>
+      <h2 style="margin: 0; font-size: 27px; font-weight: 700; line-height: 1.35;">名前で探す</h2>
+      <p style="margin: 0; font-size: 13px; line-height: 1.9; color: #b6a898; max-width: 40rem;">
+        2,515件を端から眺めるのは現実的ではないので、銘柄名・蒸留所名・種別のどれでも部分一致で絞り込めます。
+        入力するそばから件数が変わります。実際に打ち込んで試せます。</p>
+    </div>
+
+    <div style="display: flex; gap: 10px; align-items: stretch;">
+      <div style="flex: 1; display: flex; align-items: center; gap: 12px; padding: 0 18px; border-radius: 999px;
+        background: rgba(240,231,220,.06); border: 1px solid rgba(240,231,220,.14);">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#857a6e" stroke-width="1.8" style="flex: none;">
+          <circle cx="11" cy="11" r="7"/><path d="M20 20l-4.3-4.3"/></svg>
+        <input type="text" value="{{q}}" onChange="{{onQ}}" placeholder="ウォッカ、焼酎、ウィルキンソン…"
+          style="flex: 1; padding: 14px 0; background: transparent; border: 0; color: #f0e7dc;
+          font-family: Murecho, sans-serif; font-size: 14px;">
+      </div>
+      <button onClick="{{clear}}" style="padding: 0 22px; border-radius: 999px; background: transparent;
+        border: 1px solid rgba(240,231,220,.14); color: #b6a898;
+        font-family: Murecho, sans-serif; font-size: 13px; cursor: pointer;">消去</button>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 7px;">
+      <sc-for list="{{suggestions}}" as="s" hint-placeholder-count="5">
+        <button onClick="{{s.pick}}" style="padding: 6px 15px; border-radius: 999px; font-size: 12px;
+          background: rgba(240,231,220,.06); color: #b6a898; border: 1px solid rgba(240,231,220,.12);
+          cursor: pointer; font-family: Murecho, sans-serif;">{{s.label}}</button>
+      </sc-for>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 11px;
+      letter-spacing: .14em; color: #857a6e; border-bottom: 1px solid rgba(240,231,220,.12); padding-bottom: 10px;">
+      <span>{{count}} 件</span><span>20g単価の安い順</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <sc-for list="{{results}}" as="item" hint-placeholder-count="4">
+        <div style="padding: 18px 22px; border-radius: 16px; background: rgba(240,231,220,.055);
+          border: 1px solid rgba(240,231,220,.1); display: flex; gap: 20px; align-items: center;">
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 7px; min-width: 0;">
+            <a href="#" style="font-size: 15px; font-weight: 500; line-height: 1.5;">{{item.n}}</a>
+            <div style="display: flex; flex-wrap: wrap; gap: 5px 16px; font-size: 12px; color: #b6a898;">
+              <span style="color: #7fc0a8;">{{item.rate}}</span><span>{{item.spec}}</span>
+              <span>{{item.price}}</span><span style="color: #857a6e;">{{item.g}}</span></div>
+          </div>
+          <div style="text-align: right; flex: none;">
+            <div style="font-family: Fraunces, Georgia, serif; font-size: 32px; font-weight: 600; color: #e0a86a; line-height: 1;">{{item.y}}</div>
+            <div style="font-size: 10px; letter-spacing: .16em; color: #857a6e; margin-top: 5px;">円 / 20g</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <sc-if value="{{empty}}" hint-placeholder-val="{{false}}">
+      <p style="margin: 0; padding: 28px 0; text-align: center; font-size: 13px; color: #857a6e;">
+        一致する銘柄がありません。表記ゆれの可能性があるので、短い語で試してください。</p>
+    </sc-if>
+
+    <p style="margin: 0; font-size: 12px; line-height: 1.9; color: #857a6e;">
+      サジェストは種別と主要ブランドから作ります。全データがブラウザ側にあるので、
+      入力のたびにサーバーへ問い合わせる必要がなく、体感は即時です。</p>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":900,"height":800}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { q: '' };
+  }
+
+  all() {
+    return [
+      { n: 'むぎ焼酎 すごむぎ 1.8L×6本 25% 合同酒精', y: '55.5', rate: '★ 4.88 183件', spec: '25度 1800ml × 6本', price: '5,998円', g: '焼酎' },
+      { n: 'すごいも 芋焼酎甲乙混和 25度 1.8Lパック×6本', y: '56.3', rate: '★ 4.72 179件', spec: '25度 1800ml × 6本', price: '6,080円', g: '焼酎' },
+      { n: 'ウィルキンソン ウォッカ 40度 正規 1800ml', y: '59.9', rate: '★ 4.86 81件', spec: '40度 1800ml', price: '1,724円', g: 'ウォッカ' },
+      { n: '焼酎 こくいも 25度 芋焼酎 1.8L パック 6本セット', y: '62.9', rate: '★ 4.92 391件', spec: '25度 1800ml × 6本', price: '6,795円', g: '焼酎' },
+      { n: 'ウィルキンソン ウォッカ 1800ml×6本', y: '63.6', rate: '★ 4.85 54件', spec: '40度 1800ml × 6本', price: '10,998円', g: 'ウォッカ' },
+      { n: 'サントリー ジン 翠(SUI) 1.8Lペット', y: '121.1', rate: '★ 4.61 42件', spec: '40度 1800ml', price: '3,480円', g: 'ジン' },
+    ];
+  }
+
+  renderVals() {
+    const q = (this.state.q || '').trim().toLowerCase();
+    const results = q
+      ? this.all().filter(x => (x.n + ' ' + x.g).toLowerCase().includes(q))
+      : this.all();
+
+    const suggestions = ['焼酎', 'ウォッカ', 'ジン', 'ウィルキンソン', '1800ml'].map(label => ({
+      label,
+      pick: () => this.setState({ q: label }),
+    }));
+
+    return {
+      q: this.state.q || '',
+      onQ: (e) => this.setState({ q: e.target.value }),
+      clear: () => this.setState({ q: '' }),
+      suggestions,
+      results,
+      count: String(results.length),
+      empty: results.length === 0,
+    };
+  }
+}
+</script>
+</body>
+</html>
