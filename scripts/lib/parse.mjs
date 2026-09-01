@@ -14,7 +14,10 @@ export function normalize(s) {
     .replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
     .replace(/[％]/g, '%')
     .replace(/[．]/g, '.')
-    .replace(/[－ー―‐]/g, '-')
+    // 長音符「ー」(U+30FC) は入れないこと。カタカナ語の一部であって記号ではないため、
+    // ここに含めると「サントリー」が「サントリ-」に、「ケース」が「ケ-ス」になり、
+    // 以後カタカナで照合するものが軒並み一致しなくなる。
+    .replace(/[－―‐]/g, '-')
     .replace(/[✕╳]/g, '×')
     .replace(/[゜ﾟ]/g, '°')   // 「20゜」の半濁点を度記号として扱う
     .replace(/(\d),(\d)(?=\s*[%度°])/g, '$1.$2')  // 「39,1％」欧州式の小数点
@@ -58,8 +61,10 @@ export function parseAbv(text) {
   return null;
 }
 
-// 現実的な1本あたり容量（ミニチュア 50ml 〜 業務用 20L）
-const VOL_MIN = 50;
+// 現実的な1本あたり容量。下限は量り売りの小分け(30ml前後)まで見る ——
+// ここを50mlにしていたため「43度 30ml」が範囲外で捨てられ、単位なしのフォールバックが
+// 銘柄名「タリバーディン 500」の500を容量として拾い、誤った最安値を作っていた。
+const VOL_MIN = 10;
 const VOL_MAX = 20000;
 
 // エタノールの比重。厚労省ガイドラインの純アルコール量の計算式に合わせる。
@@ -100,6 +105,9 @@ const BOTTLE_SIZES = new Set([180, 200, 300, 360, 500, 640, 700, 720, 750, 900, 
 export function parseVolumeLoose(text) {
   const s = normalize(text);
   if (!s) return null;
+  // 単位付きの容量がどこかに書かれているなら、それが答え。裸の数値は銘柄名の一部
+  // （「タリバーディン 500」）であることが多いので、拾いにいってはいけない。
+  if (/\d\s*(?:ml|cc|ミリリットル|l|リットル)(?![a-z])/i.test(s)) return null;
   const re = /(?<![\d.])(\d{3,4})(?![\d.])\s*(?![a-z年円個入本缶%°度])/gi;
   let hit;
   while ((hit = re.exec(s)) !== null) {
@@ -125,6 +133,22 @@ export function parseAbvVolumePair(text) {
     if (abv >= 15 && abv <= ABV_MAX && BOTTLE_SIZES.has(vol)) return { abv, volumeMl: vol };
   }
   return null;
+}
+
+// 数量が確定できない商品。楽天では選択肢のある商品に最低価格が表示されるので、
+// 「単品／ケース【12本セット】」の3,080円は1本の値段だが、名前からは12本セットに見える。
+// 12倍の総量で割ると単価が1/12になり、誤った最安値としてランキング1位に立つ。
+// どちらの価格か確定できない以上、載せないのが正しい。
+const AMBIGUOUS_QTY = [
+  /単品\s*[／/・]\s*(?:ケース|セット)/,
+  /(?:ケース|セット)\s*[／/・]\s*単品/,
+  /選べる|よりどり|お好み|いずれか|組み合わせ自由/,
+];
+
+/** 数量の解釈が一意に定まらない商品名かどうか */
+export function hasAmbiguousQuantity(text) {
+  const s = normalize(text);
+  return AMBIGUOUS_QTY.some(re => re.test(s));
 }
 
 /** セット本数を返す。単品なら 1。 */
@@ -168,6 +192,10 @@ export function parseItem({ itemName, itemCaption = '', itemPrice }) {
     (abv !== null ? parseVolumeLoose(itemName) : null);
   const setCount = parseSetCount(itemName);
 
+  // 数量が確定しない商品は、度数や容量が読めても単価を出せない。先に弾く。
+  if (hasAmbiguousQuantity(itemName)) {
+    return { ok: false, abv, volumeMl, setCount, reason: 'ambiguous' };
+  }
   if (abv === null || volumeMl === null) {
     return { ok: false, abv, volumeMl, setCount, reason: abv === null ? 'abv' : 'volume' };
   }

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseAbv, parseVolume, parseVolumeLoose, parseAbvVolumePair, parseSetCount, parseItem } from './parse.mjs';
+import { parseAbv, parseVolume, parseVolumeLoose, parseAbvVolumePair, parseSetCount, parseItem, hasAmbiguousQuantity, normalize } from './parse.mjs';
 
 test('度数: ラベルなしの基本形', () => {
   assert.equal(parseAbv('サントリー ウイスキー 角瓶 40度 700ml'), 40);
@@ -163,4 +163,51 @@ test('度数と容量: 「45/700」形式を組として読む', () => {
 test('度数と容量: 規格外の組み合わせは採用しない', () => {
   assert.equal(parseAbvVolumePair('商品番号 45/123'), null);
   assert.equal(parseAbvVolumePair('10/700'), null); // 度数として低すぎる
+});
+
+test('数量: 単品とケースの選択式は数量が確定しないので弾く', () => {
+  // 表示価格3,080円は単品1本の値段だが、名前は12本セットに見える。
+  const r = parseItem({
+    itemName: 'サントリー ウイスキー スペシャル リザーブ 700ml瓶 単品／ケース【12本セット】',
+    itemPrice: 3080,
+  });
+  assert.equal(r.ok, false);
+  assert.equal(r.reason, 'ambiguous');
+});
+
+test('数量: よりどり・選べる系も弾く', () => {
+  assert.equal(hasAmbiguousQuantity('よりどり6本 焼酎 25度 1800ml'), true);
+  assert.equal(hasAmbiguousQuantity('選べる ウイスキー 3本セット 40度 700ml'), true);
+});
+
+test('数量: 通常のセット品は弾かない', () => {
+  const r = parseItem({ itemName: 'ジムビーム 40度 700ml×12本 ケース', itemPrice: 20160 });
+  assert.equal(r.ok, true);
+  assert.equal(r.setCount, 12);
+});
+
+test('正規化: カタカナの長音符を壊さない', () => {
+  // 「ー」(U+30FC) をダッシュとして正規化すると、以後カタカナでの照合が全て破綻する。
+  assert.equal(normalize('サントリー ウイスキー ケース'), 'サントリー ウイスキー ケース');
+  assert.equal(normalize('ウォッカ ペットボトル'), 'ウォッカ ペットボトル');
+  // 記号としてのダッシュは半角化してよい
+  assert.equal(normalize('A－B'), 'A-B');
+});
+
+test('容量: 単位付きの数値が銘柄名の数字に勝つ', () => {
+  // 「タリバーディン 500」は銘柄名。容量は明記された 30ml のほう。
+  const r = parseItem({ itemName: '【量り売り】タリバーディン 500 シェリー・フィニッシュ 43度 30ml', itemPrice: 470 });
+  assert.equal(r.ok, true);
+  assert.equal(r.volumeMl, 30);
+});
+
+test('容量: 単位が書かれていれば裸の数値は見にいかない', () => {
+  assert.equal(parseVolumeLoose('タリバーディン 500 43度 30ml'), null);
+  // 単位が一切ないときだけフォールバックが働く
+  assert.equal(parseVolumeLoose('麦焼酎 25度 1800'), 1800);
+});
+
+test('容量: 量り売りの小容量も扱える', () => {
+  assert.equal(parseVolume('ウイスキー 43度 30ml'), 30);
+  assert.equal(parseVolume('ミニチュア 50ml'), 50);
 });

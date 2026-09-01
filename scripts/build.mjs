@@ -68,6 +68,11 @@ const items = db.items.map(i => ({
   y: i.yenPerUnit,
   r: i.reviewAverage,
   c: i.reviewCount,
+  // 商品個別の期間限定ポイント倍率。利用者のSPUと違い誰にでも付くので確定値として使える。
+  pt: i.pointRate ?? 1,
+  // 送料別の表示は、商品名が「送料無料」を名乗っている場合は出さない。
+  // フラグと名前が食い違う商品が5.4%あり、フラグを鵜呑みにすると嘘を表示することになる。
+  sp: i.postageIncluded === false && !/送料無料/.test(i.name),
 }));
 
 const genres = [...new Set(items.map(i => i.g))].sort();
@@ -193,6 +198,22 @@ h1{font-size:clamp(1.7rem,6vw,2.6rem);font-weight:700;line-height:1.28;margin:0 
   border:1px solid var(--line);cursor:pointer;font-family:var(--f-body)}
 .chip[aria-pressed="true"]{color:var(--ink);border-color:var(--ink)}
 .note{font-size:.72rem;color:var(--faint);margin:0;line-height:1.75}
+
+/* 還元率。人によって違うので入力してもらうしかない —— これが静的な比較記事にできないこと。 */
+.rate{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+.rate label{font-size:.75rem;color:var(--sub);white-space:nowrap}
+.rate input[type=range]{flex:1;min-width:8rem;accent-color:var(--amber);height:1.4rem;cursor:pointer}
+.rate output{font-family:var(--f-num);font-size:1rem;font-weight:600;color:var(--amber);
+  min-width:2.6rem;text-align:right;font-variant-numeric:tabular-nums}
+.rate .presets{display:flex;gap:.3rem}
+.rate .presets button{padding:.22rem .6rem;border-radius:999px;font-size:.68rem;background:transparent;
+  color:var(--faint);border:1px solid var(--line);cursor:pointer;font-family:var(--f-body);white-space:nowrap}
+.rate .presets button:hover{color:var(--ink);border-color:var(--sub)}
+
+.badge{padding:.05rem .45rem;border-radius:999px;font-size:.66rem;letter-spacing:.02em}
+.badge.pt{color:var(--amber);border:1px solid rgba(224,168,106,.4)}
+.badge.sp{color:var(--faint);border:1px solid var(--line)}
+.list-price{font-size:.62rem;color:var(--faint);margin-top:.2rem;font-variant-numeric:tabular-nums}
 
 .bar{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;
   margin:1.4rem 0 .6rem;font-size:.68rem;letter-spacing:.12em;color:var(--faint);
@@ -325,6 +346,17 @@ footer dd{margin:0}
     <button type="button" class="chip" data-size="home" aria-pressed="true">家庭用サイズ</button>
     ${genres.map(g => `<button type="button" class="chip" data-genre="${esc(g)}" aria-pressed="false">${esc(g)}</button>`).join('\n    ')}
   </div>
+  <div class="rate">
+    <label for="rate">あなたの還元率</label>
+    <input type="range" id="rate" min="1" max="18" step="1" value="1" aria-describedby="rateNote">
+    <output id="rateOut" for="rate">1%</output>
+    <span class="presets">
+      <button type="button" data-rate="1">通常のみ</button>
+      <button type="button" data-rate="4">楽天カード</button>
+      <button type="button" data-rate="9">SPU中</button>
+      <button type="button" data-rate="15">SPU高</button>
+    </span>
+  </div>
   <p class="note" id="modeNote"></p>
 </div>
 
@@ -343,8 +375,15 @@ footer dd{margin:0}
     <dt>掲載</dt><dd>${items.length.toLocaleString()} 件（うち評価あり ${db.stats.withReview.toLocaleString()} 件）</dd>
     <dt>除外</dt><dd>度数が読み取れなかった ${db.stats.dropped.abv.toLocaleString()} 件、容量が読み取れなかった ${db.stats.dropped.volume.toLocaleString()} 件</dd>
     <dt>計算式</dt><dd>純アルコール量(g) = 容量(ml) × 度数 ÷ 100 × 0.8。これを20gあたりの価格に換算</dd>
+    <dt>実質価格</dt><dd>表示価格 × (1 − 還元率 ÷ 100)。還元率 = 入力値 + 商品個別の期間限定ポイント倍率の上乗せ分</dd>
+    <dt>ポイント倍率</dt><dd>APIが返す商品個別の期間限定倍率（24時間以内に終了するものは含まれません）</dd>
   </dl>
-  <p>価格は取得時点のもので、実際の販売価格・在庫と異なる場合があります。購入前に販売ページでご確認ください。ポイント還元は含めていません。</p>
+  <p>
+    価格は取得時点のもので、実際の販売価格・在庫と異なる場合があります。購入前に販売ページでご確認ください。
+    還元率はSPUなどで人により異なるため、実質価格は入力値に基づく目安です。買いまわりキャンペーンの倍率と
+    獲得上限は反映していません。「送料別」の表示は楽天のフラグに基づきますが、商品名が送料無料を明示している場合は
+    出していません（フラグと実態が食い違う商品が一定数あるため）。
+  </p>
   <div class="legal">
     <strong>20歳未満の者の飲酒は法律で禁じられています。</strong><br>
     妊娠中や授乳期の飲酒は胎児・乳児の発育に影響するおそれがあります。飲酒運転は法律で禁止されています。
@@ -375,17 +414,26 @@ footer dd{margin:0}
   const keyOf = i => i.n + '|' + i.p;
   const byKey = new Map(DATA.map(i => [keyOf(i), i]));
 
-  const state = { mode: 'cheap', home: true, genres: new Set(), q: '', shown: PAGE, picks: [], view: 'list' };
+  const state = { mode: 'cheap', home: true, genres: new Set(), q: '', shown: PAGE, picks: [], view: 'list', rate: 1 };
+
+  // 実質単価 = 表示単価 × (1 − 還元率/100)。
+  // 還元率は「利用者のSPU等」＋「商品個別の期間限定倍率のうち通常1%を超える分」。
+  // 前者は人によって違うので入力してもらい、後者はAPIが返す確定値を足す。
+  const effRate = i => state.rate + Math.max(0, i.pt - 1);
+  const eff = i => i.y * (1 - effRate(i) / 100);
+  const effPrice = i => i.p * (1 - effRate(i) / 100);
   const $ = id => document.getElementById(id);
   const store = (k, v) => { try { v === undefined ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} };
   const read = k => { try { return localStorage.getItem(k); } catch { return null; } };
 
   const NOTES = {
-    cheap: '純アルコール20gあたりの価格が安い順に並べています。評価の有無は問いません。',
+    cheap: 'ポイント還元を差し引いた実質価格で、純アルコール20gあたりが安い順に並べています。',
     value: 'レビュー' + MIN_REVIEWS + '件以上かつ評点' + MIN_RATING.toFixed(1) +
-           '以上の商品に絞り、その中で20gあたりの価格が安い順に。安さと評価の両立で選びたい場合に。',
+           '以上の商品に絞り、その中で実質20g単価が安い順に。安さと評価の両立で選びたい場合に。',
     rated: 'レビュー' + RATED_MIN_REVIEWS + '件以上の商品に絞り、評点の高い順に。価格は考慮しません。',
   };
+  const RATE_NOTE = '還元率はSPUなどで人によって変わるため、ご自身の値を入れてください。' +
+    '商品ごとの期間限定ポイント倍率はAPIの値をここに上乗せしています。';
 
   const num = n => n.toLocaleString('ja-JP', { maximumFractionDigits: 1 });
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -399,18 +447,18 @@ footer dd{margin:0}
       r = r.filter(i => (i.n + ' ' + i.g).toLowerCase().includes(q));
     }
     if (state.mode === 'value') {
-      return r.filter(i => i.c >= MIN_REVIEWS && i.r >= MIN_RATING).slice().sort((a, b) => a.y - b.y);
+      return r.filter(i => i.c >= MIN_REVIEWS && i.r >= MIN_RATING).slice().sort((a, b) => eff(a) - eff(b));
     }
     if (state.mode === 'rated') {
       // 評点が同じなら件数が多いほうを上に。少数の高評価より裏付けのあるほうが信用できる。
       return r.filter(i => i.c >= RATED_MIN_REVIEWS).slice().sort((a, b) => (b.r - a.r) || (b.c - a.c));
     }
-    return r.slice().sort((a, b) => a.y - b.y);
+    return r.slice().sort((a, b) => eff(a) - eff(b));
   }
 
   function renderList() {
     const rows = filtered();
-    $('modeNote').textContent = NOTES[state.mode];
+    $('modeNote').textContent = NOTES[state.mode] + ' ' + RATE_NOTE;
     $('count').textContent = rows.length.toLocaleString() + ' 件';
 
     const list = $('list');
@@ -423,7 +471,7 @@ footer dd{margin:0}
 
     // 目盛の上端は95パーセンタイル。845万円のマッカラン50年が1本混じるだけで
     // 最大値基準の目盛は全行が同じ長さになり、何も読み取れなくなる。
-    const sorted = rows.map(i => i.y).sort((a, b) => a - b);
+    const sorted = rows.map(eff).sort((a, b) => a - b);
     const lo = sorted[0];
     const hi = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.95))];
     $('range').textContent = num(lo) + ' 〜 ' + num(hi) + ' 円/20g';
@@ -446,9 +494,13 @@ footer dd{margin:0}
             '<span>' + i.a + '度</span><span>' + i.v.toLocaleString() + 'ml' + (i.s > 1 ? ' × ' + i.s + '本' : '') + '</span>' +
             '<span>純AL ' + num(i.w) + 'g</span><span>' + i.p.toLocaleString() + '円</span>' +
             '<span class="tag">' + esc(i.g) + '</span>' +
+            (i.pt > 1 ? '<span class="badge pt">ポイント' + i.pt + '倍</span>' : '') +
+            (i.sp ? '<span class="badge sp">送料別</span>' : '') +
           '</span>' +
         '</div>' +
-        '<div class="price"><b>' + num(i.y) + '</b><span>円 / 20g</span></div>' +
+        '<div class="price"><b>' + num(eff(i)) + '</b><span>円 / 20g</span>' +
+          (effRate(i) > 0 ? '<div class="list-price">定価 ' + num(i.y) + '円 · ' + effRate(i) + '%還元</div>' : '') +
+        '</div>' +
         '<button type="button" class="pick" data-k="' + esc(k) + '" aria-pressed="' + on + '"' +
           (full ? ' disabled' : '') + '>' + (on ? '比較から外す' : '比較に追加') + '</button>';
       frag.appendChild(li);
@@ -463,8 +515,8 @@ footer dd{margin:0}
     if (state.view !== 'compare' || !picked.length) { sec.hidden = true; sec.innerHTML = ''; return; }
     sec.hidden = false;
 
-    const bestY = Math.min(...picked.map(i => i.y));
-    const bestP = Math.min(...picked.map(i => i.p));
+    const bestY = Math.min(...picked.map(eff));
+    const bestP = Math.min(...picked.map(effPrice));
     const bestR = Math.max(...picked.map(i => i.r));
     const cols = picked.length;
 
@@ -482,13 +534,17 @@ footer dd{margin:0}
           '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
           '<path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
           '<span class="nm">' + esc(i.n) + '</span><span class="tag">' + esc(i.g) + '</span></div>').join('') +
-        rowOf('20g単価', i => '<div class="cell big' + (i.y === bestY ? ' best' : '') + '">' + num(i.y) + '</div>') +
+        rowOf('実質20g単価', i => '<div class="cell big' + (eff(i) === bestY ? ' best' : '') + '">' + num(eff(i)) + '</div>') +
+        rowOf('還元率', i => '<div class="cell">' + effRate(i) + '%' +
+          (i.pt > 1 ? ' <span style="color:var(--amber);font-size:.72rem">ポイント' + i.pt + '倍</span>' : '') + '</div>') +
         rowOf('評価', i => '<div class="cell' + (i.c > 0 && i.r === bestR ? ' best-r' : '') + '">' +
           (i.c > 0 ? i.r.toFixed(2) + ' <span style="color:var(--faint);font-size:.72rem">' + i.c + '件</span>' : '—') + '</div>') +
         rowOf('度数', i => '<div class="cell">' + i.a + '度</div>') +
         rowOf('容量', i => '<div class="cell">' + i.v.toLocaleString() + 'ml' + (i.s > 1 ? ' × ' + i.s + '本' : '') + '</div>') +
         rowOf('純アルコール', i => '<div class="cell">' + num(i.w) + ' g</div>') +
-        rowOf('総額', i => '<div class="cell' + (i.p === bestP ? ' best' : '') + '">' + i.p.toLocaleString() + '円</div>') +
+        rowOf('実質総額', i => '<div class="cell' + (effPrice(i) === bestP ? ' best' : '') + '">' +
+          Math.round(effPrice(i)).toLocaleString() + '円' +
+          '<div class="list-price">定価 ' + i.p.toLocaleString() + '円' + (i.sp ? ' · 送料別' : '') + '</div></div>') +
         '<div></div>' +
         picked.map(i => '<div><a class="buy" href="' + esc(i.u) + '" target="_blank" rel="nofollow sponsored noopener">楽天で見る</a></div>').join('') +
       '</div></div>';
@@ -528,6 +584,20 @@ footer dd{margin:0}
     else on ? state.genres.add(c.dataset.genre) : state.genres.delete(c.dataset.genre);
     state.shown = PAGE; render();
   }));
+
+  function setRate(v) {
+    state.rate = Math.max(1, Math.min(18, Number(v) || 1));
+    $('rate').value = state.rate;
+    $('rateOut').textContent = state.rate + '%';
+    store('rate', state.rate);
+    state.shown = PAGE;
+    render();
+  }
+  // スライダーは動かした端から並び替わる。還元率で順位が入れ替わることが、
+  // このサイトが静的な比較記事と違う点そのものなので、体感できるようにしておく。
+  $('rate').addEventListener('input', e => setRate(e.target.value));
+  document.querySelectorAll('.rate .presets button').forEach(b =>
+    b.addEventListener('click', () => setRate(b.dataset.rate)));
 
   let timer;
   $('q').addEventListener('input', e => {
@@ -583,6 +653,13 @@ footer dd{margin:0}
   $('more').addEventListener('click', () => { state.shown += PAGE; render(); });
 
   // ---- 復元 ----
+  const savedRate = Number(read('rate'));
+  if (savedRate >= 1 && savedRate <= 18) {
+    state.rate = savedRate;
+    $('rate').value = savedRate;
+  }
+  $('rateOut').textContent = state.rate + '%';
+
   const savedMode = read('mode');
   if (savedMode && savedMode !== 'cheap') {
     const b = document.querySelector('[data-mode="' + savedMode + '"]');

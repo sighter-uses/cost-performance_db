@@ -58,7 +58,7 @@ console.log('');
 
 // ---- 解析して、使えるものだけ残す ----
 const items = [];
-const dropped = { abv: 0, volume: 0, price: 0 };
+const dropped = { abv: 0, volume: 0, price: 0, ambiguous: 0 };
 const seen = new Map();
 
 for (const it of raw) {
@@ -77,6 +77,11 @@ for (const it of raw) {
     genre: it._genre,
     reviewAverage: Number(it.reviewAverage ?? 0),
     reviewCount: Number(it.reviewCount ?? 0),
+    // 商品個別の期間限定ポイント倍率（2〜10）。24時間以内に終了するものはAPIが返さない。
+    // 利用者のSPUと違い全員共通なので、実質価格の計算に確定値として使える。
+    pointRate: Number(it.pointRate ?? 1),
+    // 0=送料込み / 1=送料別。送料別の商品は実質の支払額が上がるが、額は分からない。
+    postageIncluded: Number(it.postageFlag ?? 0) === 0,
     abv: r.abv,
     volumeMl: r.volumeMl,
     setCount: r.setCount,
@@ -118,6 +123,6 @@ console.log('='.repeat(54));
 console.log(`  取得          ${raw.length} 件（広く ${broad.length} / レビュー付き ${reviewed.length}）`);
 console.log(`  掲載          ${items.length} 件（重複除去後）`);
 console.log(`  うちレビュー有 ${withReview.length} 件`);
-console.log(`  除外          度数欠 ${dropped.abv} / 容量欠 ${dropped.volume} / 価格欠 ${dropped.price}`);
+console.log(`  除外          度数欠 ${dropped.abv} / 容量欠 ${dropped.volume} / 数量不明 ${dropped.ambiguous} / 価格欠 ${dropped.price}`);
 console.log('='.repeat(54));
 console.log('\ndata/items.json に保存しました。');
