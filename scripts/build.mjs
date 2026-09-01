@@ -14,6 +14,15 @@ import { readFileSync, writeFileSync } from 'node:fs';
 
 const db = JSON.parse(readFileSync('data/items.json', 'utf8'));
 
+// Cloudflare Web Analytics のビーコン。Cookie も localStorage も使わず個人を追跡しないので
+// 同意バナーは要らない。トークンは HTML に載る以上どのみち公開値なので秘密ではないが、
+// 環境変数から読むことで、未設定の環境でもビルドが通るようにしておく。
+try { process.loadEnvFile('.env'); } catch { /* 環境変数を使う */ }
+const CF_BEACON = (process.env.CLOUDFLARE_ANALYTICS_TOKEN ?? '').trim();
+const beaconTag = /^[a-f0-9]{32}$/i.test(CF_BEACON)
+  ? `<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token":"${CF_BEACON}"}'></script>`
+  : '';
+
 // 「コスパ優先」の絞り込み条件。式ではなく閾値なのは、画面上で一文で説明できるようにするため。
 const MIN_REVIEWS = 3;
 const MIN_RATING = 4.0;
@@ -384,6 +393,10 @@ footer dd{margin:0}
     獲得上限は反映していません。「送料別」の表示は楽天のフラグに基づきますが、商品名が送料無料を明示している場合は
     出していません（フラグと実態が食い違う商品が一定数あるため）。
   </p>
+  <p>
+    アクセス数の把握に Cloudflare Web Analytics を使っています。Cookie も端末の識別も使わず、
+    個人を特定する情報は収集していません。
+  </p>
   <div class="legal">
     <strong>20歳未満の者の飲酒は法律で禁じられています。</strong><br>
     妊娠中や授乳期の飲酒は胎児・乳児の発育に影響するおそれがあります。飲酒運転は法律で禁止されています。
@@ -687,6 +700,7 @@ footer dd{margin:0}
   }
 })();
 </script>
+${beaconTag}
 </body>
 </html>
 `;
