@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://cost-performance-db.inspecting.workers.dev/sitemap.xml
