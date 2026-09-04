@@ -6,7 +6,7 @@
 // 通常の取得ではレビュー付き商品が5%程度しか含まれない。評価を軸にした比較が成り立たないので、
 // hasReviewFlag でレビュー付きだけを狙う2本目を回す。
 
-import { writeFileSync } from 'node:fs';
+import { writeFileSync, mkdirSync } from 'node:fs';
 import { parseItem } from './lib/parse.mjs';
 import { loadCredentials, findTargetGenres, fetchItems, HITS, INTERVAL_MS, sleep } from './lib/rakuten.mjs';
 
@@ -118,6 +118,18 @@ const out = {
 };
 
 writeFileSync('data/items.json', JSON.stringify(out, null, 2));
+
+// 日付ごとのスナップショットを残す。値動きやポイント倍率の推移は、
+// 過去を持っている者にしか書けない —— 積み始めた日からしか積めないので、
+// 使う予定が立つ前に貯めておく。キーを持たない配列にして嵩を抑える。
+// [商品名, 価格, 20g単価, ポイント倍率]
+const today = new Date().toISOString().slice(0, 10);
+mkdirSync('data/snapshots', { recursive: true });
+writeFileSync(`data/snapshots/${today}.json`, JSON.stringify({
+  date: today,
+  count: items.length,
+  rows: items.map(i => [i.name, i.price, i.yenPerUnit, i.pointRate]),
+}));
 
 console.log('='.repeat(54));
 console.log(`  取得          ${raw.length} 件（広く ${broad.length} / レビュー付き ${reviewed.length}）`);

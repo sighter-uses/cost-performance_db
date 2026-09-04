@@ -6,6 +6,9 @@
 /data/*.json
 !/data/.gitkeep
 
+# スナップショットは追跡する。過去の値動きは積み直せないので、失うと二度と戻らない。
+!/data/snapshots/
+
 node_modules/
 .wrangler/
 .DS_Store
