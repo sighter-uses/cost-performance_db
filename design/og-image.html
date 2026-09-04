@@ -14,6 +14,8 @@
   .guide code { background: #000; padding: 2px 7px; border-radius: 3px; color: #ddd; }
 
   /* ── ここから下が実際の画像（1200×630、これがちょうどOGの規定サイズ） ── */
+  /* box-sizing を忘れると padding が height に加算され、枠からはみ出して文字が重なる。 */
+  .og, .og * { box-sizing: border-box; }
   .og {
     width: 1200px; height: 630px; position: relative; overflow: hidden;
     background: #100c09; color: #f0e7dc;
@@ -29,13 +31,13 @@
   .og .grain { position: absolute; inset: 0; opacity: .42; mix-blend-mode: overlay;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='.42'/%3E%3C/svg%3E"); }
 
-  .og .inner { position: relative; height: 100%; padding: 86px 90px;
-               display: flex; flex-direction: column; justify-content: center; gap: 26px; }
+  /* 絶対配置はやめて通常フローに。文字量が変わっても重ならない。 */
+  .og .inner { position: relative; height: 100%; padding: 78px 90px;
+               display: flex; flex-direction: column; gap: 24px; }
   .og .eyebrow { font-size: 22px; letter-spacing: .3em; color: #c47c36; }
   .og h1 { margin: 0; font-size: 92px; font-weight: 700; line-height: 1.16; letter-spacing: .02em; }
   .og .sub { margin: 0; font-size: 30px; line-height: 1.7; color: #b6a898; max-width: 720px; }
-  .og .foot { position: absolute; left: 90px; bottom: 62px;
-              display: flex; align-items: baseline; gap: 20px; }
+  .og .foot { margin-top: auto; display: flex; align-items: baseline; gap: 20px; }
   .og .unit { font-family: Fraunces, Georgia, serif; font-size: 44px; font-weight: 600; color: #e0a86a; }
   .og .unit small { font-size: 20px; color: #857a6e; margin-left: 8px; letter-spacing: .1em; }
 </style>
@@ -78,10 +80,10 @@
     <span class="eyebrow">蒸留酒を同じ物差しで</span>
     <h1>蒸留酒 単価一覧</h1>
     <p class="sub">価格も度数も容量もバラバラな酒を、<br>純アルコール20gあたりの価格で並べ替える。</p>
-  </div>
 
-  <div class="foot">
-    <span class="unit">20g<small>純アルコール ／ 日本酒1合 相当</small></span>
+    <div class="foot">
+      <span class="unit">20g<small>純アルコール ／ 日本酒1合 相当</small></span>
+    </div>
   </div>
 </div>
 
