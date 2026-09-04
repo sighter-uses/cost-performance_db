@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>OG画像の原稿 1200×630</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,600&family=Murecho:wght@400;500;700&display=swap">
+<style>
+  /* ページ側の余白。撮影対象は .og だけ。 */
+  body { margin: 0; background: #2a2a2a; display: grid; place-items: center; min-height: 100vh;
+         font-family: Murecho, sans-serif; }
+  .guide { color: #888; font-size: 13px; margin: 24px 0 12px; text-align: center; line-height: 1.9; }
+  .guide code { background: #000; padding: 2px 7px; border-radius: 3px; color: #ddd; }
+
+  /* ── ここから下が実際の画像（1200×630、これがちょうどOGの規定サイズ） ── */
+  .og {
+    width: 1200px; height: 630px; position: relative; overflow: hidden;
+    background: #100c09; color: #f0e7dc;
+    font-family: Murecho, 'Hiragino Sans', sans-serif;
+  }
+  .og .glow { position: absolute; border-radius: 50%; }
+  .og .g1 { width: 900px; height: 900px; left: -260px; top: -320px;
+            background: radial-gradient(circle, rgba(196,124,54,.5), rgba(196,124,54,0) 66%); filter: blur(14px); }
+  .og .g2 { width: 700px; height: 700px; right: -180px; bottom: -300px;
+            background: radial-gradient(circle, rgba(94,142,124,.32), rgba(94,142,124,0) 68%); filter: blur(18px); }
+  /* ギヨシェ紋。サイトと同じモチーフを右に逃がす。 */
+  .og .halo { position: absolute; right: -150px; top: -110px; width: 760px; height: 760px; opacity: .38; }
+  .og .grain { position: absolute; inset: 0; opacity: .42; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='.42'/%3E%3C/svg%3E"); }
+
+  .og .inner { position: relative; height: 100%; padding: 86px 90px;
+               display: flex; flex-direction: column; justify-content: center; gap: 26px; }
+  .og .eyebrow { font-size: 22px; letter-spacing: .3em; color: #c47c36; }
+  .og h1 { margin: 0; font-size: 92px; font-weight: 700; line-height: 1.16; letter-spacing: .02em; }
+  .og .sub { margin: 0; font-size: 30px; line-height: 1.7; color: #b6a898; max-width: 720px; }
+  .og .foot { position: absolute; left: 90px; bottom: 62px;
+              display: flex; align-items: baseline; gap: 20px; }
+  .og .unit { font-family: Fraunces, Georgia, serif; font-size: 44px; font-weight: 600; color: #e0a86a; }
+  .og .unit small { font-size: 20px; color: #857a6e; margin-left: 8px; letter-spacing: .1em; }
+</style>
+</head>
+<body>
+
+<p class="guide">
+  下の枠がそのまま <b>1200×630</b> の画像です。枠内だけを画像として保存してください。<br>
+  ブラウザの開発者ツール → 要素 <code>&lt;div class="og"&gt;</code> を右クリック →
+  「ノードのスクリーンショットをキャプチャ」が最も正確です。<br>
+  保存先: <code>dist/og.png</code>
+</p>
+
+<div class="og">
+  <div class="glow g1"></div>
+  <div class="glow g2"></div>
+
+  <svg class="halo" viewBox="0 0 800 800" aria-hidden="true">
+    <g fill="none" stroke="#c47c36" stroke-width="0.9" transform="translate(0,0)">
+      <ellipse cx="400" cy="400" rx="326" ry="115" transform="rotate(0 400 400)"/>
+      <ellipse cx="400" cy="400" rx="326" ry="115" transform="rotate(15 400 400)"/>
+      <ellipse cx="400" cy="400" rx="326" ry="115" transform="rotate(30 400 400)"/>
+      <ellipse cx="400" cy="400" rx="326" ry="115" transform="rotate(45 400 400)"/>
+      <ellipse cx="400" cy="400" rx="326" ry="115" transform="rotate(60 400 400)"/>
+      <ellipse cx="400" cy="400" rx="326" ry="115" transform="rotate(75 400 400)"/>
+      <ellipse cx="400" cy="400" rx="326" ry="115" transform="rotate(90 400 400)"/>
+      <ellipse cx="400" cy="400" rx="326" ry="115" transform="rotate(105 400 400)"/>
+      <ellipse cx="400" cy="400" rx="326" ry="115" transform="rotate(120 400 400)"/>
+      <ellipse cx="400" cy="400" rx="326" ry="115" transform="rotate(135 400 400)"/>
+      <ellipse cx="400" cy="400" rx="326" ry="115" transform="rotate(150 400 400)"/>
+      <ellipse cx="400" cy="400" rx="326" ry="115" transform="rotate(165 400 400)"/>
+      <circle cx="400" cy="400" r="238" stroke="#5e8e7c"/>
+      <circle cx="400" cy="400" r="158" stroke="#5e8e7c"/>
+    </g>
+  </svg>
+
+  <div class="grain"></div>
+
+  <div class="inner">
+    <span class="eyebrow">蒸留酒を同じ物差しで</span>
+    <h1>蒸留酒 単価一覧</h1>
+    <p class="sub">価格も度数も容量もバラバラな酒を、<br>純アルコール20gあたりの価格で並べ替える。</p>
+  </div>
+
+  <div class="foot">
+    <span class="unit">20g<small>純アルコール ／ 日本酒1合 相当</small></span>
+  </div>
+</div>
+
+<p class="guide">
+  文言を変えたい場合は <code>&lt;h1&gt;</code> と <code>.sub</code> を書き換えてください。<br>
+  件数や価格は入れていません —— データが更新されるたびに画像が嘘になるためです。
+</p>
+
+</body>
+</html>

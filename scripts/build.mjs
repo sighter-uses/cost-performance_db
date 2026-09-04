@@ -13,7 +13,7 @@
 // 動きはギヨシェ紋一本に束ねる —— 重ねた楕円がゆっくり回転して干渉を起こし、
 // 静止画では出せない揺らぎが地に生まれる。
 
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 
 const db = JSON.parse(readFileSync('data/items.json', 'utf8'));
 const BASE = 'https://cost-performance-db.inspecting.workers.dev';
@@ -84,6 +84,19 @@ const isoDate = d.toISOString().slice(0, 10);
 const esc = s => String(s).replace(/[&<>"']/g, c =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const num = n => n.toLocaleString('ja-JP', { maximumFractionDigits: 1 });
+
+// OG画像は dist/og.png があるときだけ宣言する。存在しない画像を指すと、
+// 共有先が空のカードを描いてしまい、画像なしよりかえって悪い。
+// 原稿は design/og-image.html（ブラウザで開いて 1200×630 の枠を書き出す）。
+const hasOgImage = existsSync('dist/og.png');
+const ogImageTags = hasOgImage
+  ? `<meta property="og:image" content="${BASE}/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="蒸留酒 単価一覧 — 純アルコール20gあたりの価格で比べる">
+<meta name="twitter:image" content="${BASE}/og.png">`
+  : '';
+const twitterCard = hasOgImage ? 'summary_large_image' : 'summary';
 
 function stats(list) {
   const ys = list.map(i => i.y).sort((a, b) => a - b);
@@ -204,7 +217,8 @@ function page({ items, genre, path }) {
 <meta property="og:url" content="${url}">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(desc)}">
-<meta name="twitter:card" content="summary">
+${ogImageTags}
+<meta name="twitter:card" content="${twitterCard}">
 <meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(desc)}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
