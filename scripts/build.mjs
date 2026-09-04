@@ -18,6 +18,10 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 const db = JSON.parse(readFileSync('data/items.json', 'utf8'));
 const BASE = 'https://cost-performance-db.inspecting.workers.dev';
 
+// Search Console の所有権確認タグ。公開値なので秘密ではないが、環境変数にはしない ——
+// 設定のない環境でビルドすると、タグが消えたことに気づかないまま所有権確認が失効する。
+// サイトの身元そのものなので、コードに固定しておくのが正しい。
+
 try { process.loadEnvFile('.env'); } catch { /* 環境変数を使う */ }
 const CF_BEACON = (process.env.CLOUDFLARE_ANALYTICS_TOKEN ?? '').trim();
 const beaconTag = /^[a-f0-9]{32}$/i.test(CF_BEACON)
@@ -192,6 +196,7 @@ function page({ items, genre, path }) {
 <meta name="color-scheme" content="dark">
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(desc)}">
+<meta name="google-site-verification" content="eR6zNT2h_T40uKr_qGZEXLhsPrOTNhRrR2_q4JRNffs">
 <link rel="canonical" href="${url}">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="蒸留酒 単価一覧">
