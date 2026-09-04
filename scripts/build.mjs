@@ -89,14 +89,24 @@ const num = n => n.toLocaleString('ja-JP', { maximumFractionDigits: 1 });
 // 共有先が空のカードを描いてしまい、画像なしよりかえって悪い。
 // 原稿は design/og-image.html（ブラウザで開いて 1200×630 の枠を書き出す）。
 const hasOgImage = existsSync('dist/og.png');
-const ogImageTags = hasOgImage
+// 寸法は決め打ちにせずPNGのヘッダから読む。画面の解像度倍率がかかった書き出しでは
+// 1200×630 にならないので、宣言と実物がずれるとスクレイパーが誤った枠で描く。
+function pngSize(file) {
+  const b = readFileSync(file);
+  if (b.slice(1, 4).toString() !== 'PNG') return null;
+  return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) };
+}
+const ogSize = hasOgImage ? pngSize('dist/og.png') : null;
+const ogImageTags = ogSize
   ? `<meta property="og:image" content="${BASE}/og.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="${ogSize.w}">
+<meta property="og:image:height" content="${ogSize.h}">
 <meta property="og:image:alt" content="蒸留酒 単価一覧 — 純アルコール20gあたりの価格で比べる">
-<meta name="twitter:image" content="${BASE}/og.png">`
+<meta name="twitter:image" content="${BASE}/og.png">
+<meta name="twitter:image:alt" content="蒸留酒 単価一覧 — 純アルコール20gあたりの価格で比べる">`
   : '';
-const twitterCard = hasOgImage ? 'summary_large_image' : 'summary';
+const twitterCard = ogSize ? 'summary_large_image' : 'summary';
 
 function stats(list) {
   const ys = list.map(i => i.y).sort((a, b) => a - b);
