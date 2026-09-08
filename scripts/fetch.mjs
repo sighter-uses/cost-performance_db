@@ -58,7 +58,7 @@ console.log('');
 
 // ---- 解析して、使えるものだけ残す ----
 const items = [];
-const dropped = { abv: 0, volume: 0, price: 0, ambiguous: 0 };
+const dropped = { abv: 0, volume: 0, price: 0, ambiguous: 0, random: 0 };
 const seen = new Map();
 
 for (const it of raw) {
@@ -135,6 +135,6 @@ console.log('='.repeat(54));
 console.log(`  取得          ${raw.length} 件（広く ${broad.length} / レビュー付き ${reviewed.length}）`);
 console.log(`  掲載          ${items.length} 件（重複除去後）`);
 console.log(`  うちレビュー有 ${withReview.length} 件`);
-console.log(`  除外          度数欠 ${dropped.abv} / 容量欠 ${dropped.volume} / 数量不明 ${dropped.ambiguous} / 価格欠 ${dropped.price}`);
+console.log(`  除外          度数欠 ${dropped.abv} / 容量欠 ${dropped.volume} / 数量不明 ${dropped.ambiguous} / 抽選 ${dropped.random} / 価格欠 ${dropped.price}`);
 console.log('='.repeat(54));
 console.log('\ndata/items.json に保存しました。');

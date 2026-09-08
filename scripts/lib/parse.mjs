@@ -151,6 +151,29 @@ export function hasAmbiguousQuantity(text) {
   return AMBIGUOUS_QTY.some(re => re.test(s));
 }
 
+// 中身が抽選で決まる商品。「ウイスキーくじ」「スピリッツガチャ」の類。
+// 商品名に度数と容量が書いてあっても、それは当たりの一例にすぎず、
+// 実際に届く物とは限らない。単価を出すと、出てこないかもしれない酒の値段を
+// 比較表に並べることになる。
+//
+// 「福袋」は入れない。中身が確定している大容量品の売り文句としても使われていて
+// （4Lの芋焼酎が「福袋」を名乗っている実例がある）、語だけでは判別できない。
+// 「くじ」は前に漢字かカタカナを要求する ——「こうじ」「みくじ」のような
+// 無関係な語尾を拾わないため。長音符「ー」を字類に入れ忘れないこと。
+// 落としたい語がまさに「ウイスキーくじ」で、「ー」はカタカナの範囲外にある。
+const RANDOM_CONTENTS = [
+  /[ァ-ヴー一-龥]くじ/,
+  /ガチャ/,
+  /ランダムで.{0,40}届く/,
+  /中身は(?:お楽しみ|届いて|ヒミツ|秘密)/,
+];
+
+/** 中身が抽選で決まる商品名かどうか */
+export function hasRandomContents(text) {
+  const s = normalize(text);
+  return RANDOM_CONTENTS.some(re => re.test(s));
+}
+
 /** セット本数を返す。単品なら 1。 */
 export function parseSetCount(text) {
   const s = normalize(text);
@@ -195,6 +218,10 @@ export function parseItem({ itemName, itemCaption = '', itemPrice }) {
   // 数量が確定しない商品は、度数や容量が読めても単価を出せない。先に弾く。
   if (hasAmbiguousQuantity(itemName)) {
     return { ok: false, abv, volumeMl, setCount, reason: 'ambiguous' };
+  }
+  // 中身が確定しない商品も同じ。読めた度数と容量が、届く物のものだとは限らない。
+  if (hasRandomContents(itemName)) {
+    return { ok: false, abv, volumeMl, setCount, reason: 'random' };
   }
   if (abv === null || volumeMl === null) {
     return { ok: false, abv, volumeMl, setCount, reason: abv === null ? 'abv' : 'volume' };

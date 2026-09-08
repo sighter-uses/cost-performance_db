@@ -13,10 +13,20 @@
 // 動きはギヨシェ紋一本に束ねる —— 重ねた楕円がゆっくり回転して干渉を起こし、
 // 静止画では出せない揺らぎが地に生まれる。
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from 'node:fs';
+import { hasRandomContents } from './lib/parse.mjs';
 
 const db = JSON.parse(readFileSync('data/items.json', 'utf8'));
 const BASE = 'https://cost-performance-db.inspecting.workers.dev';
+
+// 運営者。情報源として選ばれるかどうかに著者の身元が効くため、名乗りと、その裏づけになる
+// 外部の実体を必ず並べて出す。資格や肩書は持っていないので書かない —— 代わりに
+// 収集と解析のコードを全部公開してあることを根拠にする。検証できるほうが強い。
+const AUTHOR = {
+  name: 'Drunker',
+  note: 'https://note.com/kosupa_watch082',
+  repo: 'https://github.com/sighter-uses/cost-performance_db',
+};
 
 // Search Console の所有権確認タグ。公開値なので秘密ではないが、環境変数にはしない ——
 // 設定のない環境でビルドすると、タグが消えたことに気づかないまま所有権確認が失効する。
@@ -69,7 +79,11 @@ function displayName(name) {
   return s.replace(/\s+/g, ' ').trim() || name;
 }
 
-const ALL = db.items.map(i => ({
+// 除外は取得時にも掛かっているが、ここでも掛ける。除外規則を足した直後は、
+// 前のデータで作られた items.json に古い基準の商品が残っている。
+// 「除外した」と書いてあるページに除外対象が載っている状態が、いちばん悪い。
+const excluded = db.items.filter(i => hasRandomContents(i.name)).length;
+const ALL = db.items.filter(i => !hasRandomContents(i.name)).map(i => ({
   n: displayName(i.name), f: i.name, p: i.price, u: i.url, g: i.genre,
   a: i.abv, v: i.volumeMl, s: i.setCount, w: i.pureAlcoholG, y: i.yenPerUnit,
   r: i.reviewAverage, c: i.reviewCount,
@@ -77,9 +91,32 @@ const ALL = db.items.map(i => ({
   sp: i.postageIncluded === false && !/送料無料/.test(i.name),
 }));
 
-const d = new Date(db.fetchedAt);
-const stamp = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
-const isoDate = d.toISOString().slice(0, 10);
+// 取得時刻はUTCで記録されるが、表示も期間も日本時間で数える。
+// 片方をローカル、片方をUTCで出すと、深夜に取得した回だけ日付が1日ずれる。
+const jstIso = t => new Date(new Date(t).getTime() + 9 * 3600 * 1000).toISOString().slice(0, 10);
+const jpDate = iso => { const [y, m, dd] = iso.split('-'); return `${+y}年${+m}月${+dd}日`; };
+const isoDate = jstIso(db.fetchedAt);
+const stamp = jpDate(isoDate);
+
+// 調査期間は「いつから観測しているか」であって、載っている数字がその期間の平均だという
+// 意味ではない。期間だけ書くと推移を集計したように読めてしまうので、
+// 「本ページの数値は◯日取得分」を必ず併記する。
+const startDate = (() => {
+  try {
+    return readdirSync('data/snapshots')
+      .filter(f => /^\d{4}-\d{2}-\d{2}\.json$/.test(f))
+      .map(f => f.slice(0, 10)).sort()[0] ?? isoDate;
+  } catch { return isoDate; }
+})();
+const periodText = startDate === isoDate
+  ? `${stamp}（単日調査）`
+  : `${jpDate(startDate)}〜${stamp}（継続調査中。本ページの数値は${stamp}取得分）`;
+const periodISO = startDate === isoDate ? isoDate : `${startDate}/${isoDate}`;
+
+// 除外の内訳。調査対象の定義は「何を入れたか」と「何を落としたか」の両方で決まる。
+const dropped = db.stats?.dropped ?? {};
+const droppedAtFetch = Object.values(dropped).reduce((a, b) => a + b, 0);
+const droppedTotal = droppedAtFetch + excluded;
 
 const esc = s => String(s).replace(/[&<>"']/g, c =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -179,17 +216,76 @@ function page({ items, genre, path }) {
     ? [{ name: '蒸留酒 単価一覧', item: BASE + '/' }, { name: genre.name, item: url }]
     : [{ name: '蒸留酒 単価一覧', item: BASE + '/' }];
 
+  // ---- 調査概要 ----
+  // 数字だけを置いても、それが何を数えたものか分からなければ引用できない。
+  // 対象の定義・期間・母数・集計方法・除外基準を、本文とは独立した1ブロックにまとめる。
+  const subject = genre ? genre.name : '蒸留酒（ウイスキー・焼酎・ジン・ラム・ウォッカ・テキーラ・ブランデー）';
+  const survey = [
+    ['調査主体', `${AUTHOR.name}（個人）`],
+    ['調査対象', `楽天市場の${subject}ジャンルに登録されている商品のうち、商品名または説明文から度数と容量を判別できたもの`],
+    ['調査期間', periodText],
+    ['有効件数', `n = ${st.count.toLocaleString()}（うち評価あり ${st.withReview.toLocaleString()}）`],
+    ['収集方法', `${esc(db.source)}から調査全体で${(db.stats?.fetched ?? 0).toLocaleString()}件を機械収集し、商品名と説明文から度数・容量・本数を抽出。同一商品が複数店舗から出るため、商品名と価格が一致するものは1件に集約`],
+    ['集計方法', '純アルコール量(g) = 容量(ml) × 度数 ÷ 100 × 0.8 として、純アルコール20gあたりの価格を算出。代表値は中央値'],
+    ['除外基準', `度数または容量を判別できなかった商品、1本あたりか総額かが判別できないセット商品、中身が抽選で決まる商品（「◯◯くじ」など）は掲載しない（調査全体で${droppedTotal.toLocaleString()}件を除外）`],
+    ['既知の限界', '種別の区分は楽天市場のジャンル登録に従っており、これは出品店舗が設定するものです。そのため商品名から見て別の種別と思われる商品が1%程度混じります。当方で分類し直してはいません'],
+    ['再現性', `収集・解析のコードは <a href="${AUTHOR.repo}" rel="noopener" target="_blank">GitHubで公開</a>しており、同じ手順で誰でも再取得できる`],
+  ];
+
+  // ---- よくある質問 ----
+  // 1問1答で、各答えがそれ単体で意味を持つように書く。
+  // 前の答えを読んでいないと分からない書き方をすると、切り出して引用できない。
+  const faq = [
+    ['「純アルコール20gあたりの価格」とは何ですか',
+      '純アルコール20gは、厚生労働省の飲酒ガイドラインが「1ドリンク（1単位）」として示す量で、日本酒1合やビール中瓶1本にあたります。容量(ml) × 度数 ÷ 100 × 0.8 で純アルコール量(g)を求め、販売価格をその量で割って20g分に換算した値が20g単価です。度数も容量も違う酒を同じ物差しで並べるための単位です。'],
+    [`${subject.replace(/（.*/, '')}の20g単価はいくらくらいですか`,
+      `${stamp}時点で楽天市場の${genre ? genre.name : '蒸留酒'} ${st.count.toLocaleString()}件を集計した結果、中央値は${Math.round(st.median)}円、最安は${num(st.min)}円でした。${genre ? '' : '種別ごとの中央値は' + GENRES.map(g => `${g.name}${Math.round(stats(ALL.filter(i => i.g === g.name)).median)}円`).join('、') + 'です。'}`],
+    ['なぜ販売価格ではなく単価で比べるのですか',
+      '容量と度数がばらばらだからです。1本の価格は容量が大きいほど高くなり、同じ容量でも度数が高いほど一本から取れる杯数は増えます。価格の安さと、酔いの量あたりの安さは一致しません。純アルコール量で割ると、この2つの違いを同時に吸収できます。'],
+    ['掲載されていない商品があるのはなぜですか',
+      `商品名と説明文から度数と容量を機械的に読み取っており、どちらかが読み取れない商品は掲載していません。「12本セット」のように表示価格が1本あたりか総額かを判別できない商品、「ウイスキーくじ」のように中身が抽選で決まる商品も除外しています。調査全体で${droppedTotal.toLocaleString()}件が該当しました。誤った単価を出すより、載せないほうがよいと判断しています。`],
+    ['種別（ウイスキー・焼酎など）はどうやって決めていますか',
+      '楽天市場のジャンル登録をそのまま使っています。これは出品店舗が設定するもので、当方で分類し直してはいません。そのため、商品名から見て別の種別と思われる商品が1%程度混じります。中央値のような代表値には影響しない水準ですが、各種別の最安値を見るときはご注意ください。'],
+    ['「実質価格」はどう計算していますか',
+      '表示価格 × (1 − 還元率 ÷ 100) です。還元率は、あなたが入力した値に、商品ごとの期間限定ポイント倍率の上乗せ分を加えたものです。SPUは人によって違うため入力式にしています。買いまわりキャンペーンの倍率と獲得上限は反映していません。'],
+    ['データはいつ時点のものですか',
+      `${periodText}。価格・在庫・ポイント倍率は変動するため、購入前に販売ページでご確認ください。24時間以内に終了するポイント倍率はAPIが返さないため、掲載の倍率は取得時点の記録です。`],
+  ];
+
+  const person = {
+    '@type': 'Person', '@id': BASE + '/#author', name: AUTHOR.name, url: BASE + '/',
+    sameAs: [AUTHOR.note, AUTHOR.repo],
+    description: '楽天ウェブサービスのAPIで蒸留酒の価格データを収集し、純アルコール量あたりの単価に換算して公開している個人。収集と解析のコードを公開している。',
+  };
+
   const ld = {
     '@context': 'https://schema.org',
     '@graph': [
+      person,
       {
         '@type': 'WebSite', '@id': BASE + '/#website', url: BASE + '/',
         name: '蒸留酒 単価一覧', inLanguage: 'ja',
         description: '蒸留酒を純アルコール20gあたりの価格で横断比較するデータベース',
+        author: { '@id': BASE + '/#author' }, publisher: { '@id': BASE + '/#author' },
       },
       {
         '@type': 'WebPage', '@id': url + '#webpage', url, name: title, description: desc,
-        isPartOf: { '@id': BASE + '/#website' }, inLanguage: 'ja', datePublished: isoDate, dateModified: isoDate,
+        isPartOf: { '@id': BASE + '/#website' }, inLanguage: 'ja',
+        datePublished: isoDate, dateModified: isoDate,
+        author: { '@id': BASE + '/#author' }, primaryImageOfPage: hasOgImage ? BASE + '/og.png' : undefined,
+      },
+      // このページの本体は記事ではなく調査データそのものなので Dataset で宣言する。
+      // Article を名乗ると型と中身が食い違い、かえって信用を落とす。
+      {
+        '@type': 'Dataset', '@id': url + '#dataset',
+        name: genre ? `楽天市場の${genre.name} 純アルコール20gあたり単価調査` : '楽天市場の蒸留酒 純アルコール20gあたり単価調査',
+        description: `楽天市場で販売されている${subject}${st.count}件について、商品名と説明文から度数と容量を抽出し、純アルコール20g（日本酒1合相当）あたりの価格を算出した調査データ。中央値${Math.round(st.median)}円、最安${num(st.min)}円。`,
+        url, inLanguage: 'ja', isAccessibleForFree: true,
+        creator: { '@id': BASE + '/#author' }, includedInDataCatalog: { '@id': BASE + '/#website' },
+        temporalCoverage: periodISO, dateModified: isoDate,
+        measurementTechnique: '純アルコール量(g) = 容量(ml) × 度数 ÷ 100 × 0.8 として純アルコール20gあたりの価格に換算',
+        variableMeasured: ['純アルコール20gあたりの価格（円）', 'アルコール度数（%）', '内容量（ml）', '販売価格（円）', 'レビュー評点', 'レビュー件数'],
+        keywords: (genre ? [genre.name] : GENRES.map(g => g.name)).concat(['純アルコール', '単価', 'コストパフォーマンス', '楽天市場']),
       },
       {
         '@type': 'BreadcrumbList',
@@ -201,6 +297,13 @@ function page({ items, genre, path }) {
         '@type': 'ItemList', name: title, numberOfItems: ssr.length,
         itemListElement: ssr.slice(0, 20).map((i, n) => ({
           '@type': 'ListItem', position: n + 1, name: i.n, url: i.u,
+        })),
+      },
+      {
+        '@type': 'FAQPage', '@id': url + '#faq',
+        mainEntity: faq.map(([q, a]) => ({
+          '@type': 'Question', name: q,
+          acceptedAnswer: { '@type': 'Answer', text: a },
         })),
       },
     ],
@@ -246,6 +349,10 @@ ${ogImageTags}
   --f-body:Murecho,'Hiragino Sans','Yu Gothic',system-ui,sans-serif;
 }
 *{box-sizing:border-box}
+/* hidden属性は display を持つクラスに負ける。.tray も .more も display を指定しているため、
+   JS で hidden を立てても消えていなかった（比較トレイが「0 件を選択中」のまま出続ける）。
+   個別に打ち消すと次に display を足したときに再発するので、ここで一度だけ勝たせる。 */
+[hidden]{display:none!important}
 body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--f-body);
   line-height:1.75;font-feature-settings:"palt" 1;-webkit-font-smoothing:antialiased;
   overflow-x:hidden;position:relative}
@@ -396,6 +503,25 @@ ol.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;ga
   grid-template-columns:repeat(auto-fill,minmax(13rem,1fr));gap:.5rem}
 .crosslinks li{font-size:.82rem}
 .crosslinks .med{color:var(--faint);font-size:.72rem;font-variant-numeric:tabular-nums}
+.survey{margin:1.5rem 0 0;padding:1rem 1.2rem;border:1px solid var(--rule);border-radius:14px;
+  background:rgba(240,231,220,.03)}
+.survey h2{font-size:.65rem;letter-spacing:.22em;color:var(--amber-deep);margin:0 0 .75rem;font-weight:400}
+.survey dl{margin:0;display:grid;grid-template-columns:max-content 1fr;gap:.3rem 1.1rem;
+  font-size:.73rem;line-height:1.8}
+.survey dt{color:var(--faint);white-space:nowrap}
+.survey dd{margin:0;color:var(--sub)}
+@media (max-width:34rem){
+  .survey dl{grid-template-columns:1fr;gap:0}
+  .survey dt{margin-top:.6rem}
+  .survey dt:first-child{margin-top:0}
+}
+.faq{margin-top:2.5rem;padding-top:1.4rem;border-top:1px solid var(--line)}
+.faq h2{font-size:.65rem;letter-spacing:.22em;color:var(--amber-deep);margin:0 0 .4rem;font-weight:400}
+.faq dl{margin:0}
+.faq dt{font-size:.88rem;font-weight:700;line-height:1.65;margin-top:1.4rem}
+.faq dd{margin:.4rem 0 0;font-size:.79rem;color:var(--sub);line-height:1.95}
+.who{margin:0 0 1.4rem}
+.who b{color:var(--ink);font-weight:700}
 footer{margin-top:3rem;border-top:1px solid var(--rule);padding-top:1.6rem;
   font-size:.76rem;color:var(--sub);line-height:1.95}
 footer h2{font-size:.65rem;letter-spacing:.22em;color:var(--amber-deep);margin:0 0 .8rem;font-weight:400}
@@ -443,6 +569,13 @@ footer dd{margin:0}
     <div><dt>最安</dt><dd style="color:var(--amber)">${num(st.min)}</dd></div>
   </dl>
 </header>
+
+<section class="survey" aria-labelledby="survey-h">
+  <h2 id="survey-h">調査概要</h2>
+  <dl>
+    ${survey.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('\n    ')}
+  </dl>
+</section>
 
 <div class="controls">
   <div class="search">
@@ -493,10 +626,26 @@ footer dd{margin:0}
   </ul>
 </section>
 
+<section class="faq" aria-labelledby="faq-h">
+  <h2 id="faq-h">よくある質問</h2>
+  <dl>
+    ${faq.map(([q, a]) => `<dt>${q}</dt><dd>${a}</dd>`).join('\n    ')}
+  </dl>
+</section>
+
 <footer>
+  <h2>運営者</h2>
+  <p class="who"><b>${AUTHOR.name}</b> —— 楽天ウェブサービスのAPIで蒸留酒の価格データを集め、
+    純アルコール量あたりの単価に換算して公開しています。酒造や販売店とは関係のない個人で、
+    掲載する銘柄の選定に第三者は関与していません。
+    気づいたことは <a href="${AUTHOR.note}" rel="me noopener" target="_blank">note</a> に書いています。
+    収集と解析のコードは <a href="${AUTHOR.repo}" rel="noopener" target="_blank">GitHub</a> で公開しており、
+    このページの数値がどう作られたかは全部読めますし、同じ手順で再取得できます。
+    誤りを見つけた場合は note のコメントか GitHub の Issue でお知らせください。</p>
+
   <h2>このデータについて</h2>
   <dl>
-    <dt>取得日</dt><dd>${stamp}</dd>
+    <dt>調査期間</dt><dd>${periodText}</dd>
     <dt>データ元</dt><dd>${esc(db.source)}</dd>
     <dt>対象</dt><dd>${genreList.map(esc).join('、')}</dd>
     <dt>掲載</dt><dd>${st.count.toLocaleString()} 件（うち評価あり ${st.withReview.toLocaleString()} 件）</dd>

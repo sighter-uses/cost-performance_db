@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseAbv, parseVolume, parseVolumeLoose, parseAbvVolumePair, parseSetCount, parseItem, hasAmbiguousQuantity, normalize } from './parse.mjs';
+import { parseAbv, parseVolume, parseVolumeLoose, parseAbvVolumePair, parseSetCount, parseItem, hasAmbiguousQuantity, hasRandomContents, normalize } from './parse.mjs';
 
 test('度数: ラベルなしの基本形', () => {
   assert.equal(parseAbv('サントリー ウイスキー 角瓶 40度 700ml'), 40);
@@ -210,4 +210,31 @@ test('容量: 単位が書かれていれば裸の数値は見にいかない', 
 test('容量: 量り売りの小容量も扱える', () => {
   assert.equal(parseVolume('ウイスキー 43度 30ml'), 30);
   assert.equal(parseVolume('ミニチュア 50ml'), 50);
+});
+
+test('抽選商品: 中身が確定しない商品を落とす', () => {
+  // 「ウイスキーくじ」は当たりの銘柄名・度数・容量が書いてあるが、それが届く保証はない。
+  assert.equal(hasRandomContents('ウイスキーくじ ランダムで知多が届く！ 700ml×1本 グランツ8年'), true);
+  assert.equal(hasRandomContents('スピリッツ ＆ ウイスキー ガチャ 1本組！ 目玉は「山崎12年」！'), true);
+  assert.equal(hasRandomContents('【第24弾】響21年があたる!?オリジナルウイスキーくじ！'), true);
+});
+
+test('抽選商品: 「くじ」を含むだけの銘柄名は落とさない', () => {
+  // 実在する銘柄。ひらがなの途中の「くじ」を拾うと、まともな商品が消える。
+  assert.equal(hasRandomContents('麦焼酎 特蒸泰明（とくじょうたいめい） 25度 1800ml'), false);
+  assert.equal(hasRandomContents('シングルモルト 久住(くじゅう) Tabi #01 53% 700ml'), false);
+  // 「福袋」は中身が確定した大容量品の売り文句にも使われるので、語だけでは落とさない
+  assert.equal(hasRandomContents('芋焼酎 4l 4リットル 黒麹 本格 焼酎 福袋 芋の一 業務用'), false);
+});
+
+test('抽選商品: 長音符のあとの「くじ」を取りこぼさない', () => {
+  // 「ー」(U+30FC) はカタカナの字類 [ァ-ヴ] の外にある。落としたい語がまさに
+  // 「ウイスキーくじ」なので、字類に「ー」を入れ忘れると全て素通りする。
+  assert.equal(hasRandomContents('オリジナルウイスキーくじ'), true);
+});
+
+test('抽選商品: parseItem が reason:random で弾く', () => {
+  const r = parseItem({ itemName: 'ウイスキーくじ ランダムで知多が届く！ 43度 700ml×1本', itemPrice: 5500 });
+  assert.equal(r.ok, false);
+  assert.equal(r.reason, 'random');
 });
