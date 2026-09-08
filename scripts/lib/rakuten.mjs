@@ -2,6 +2,21 @@
 // 2026年の仕様変更で applicationId(UUID) と accessKey の両方が必須。
 // エンドポイントは openapi.rakuten.co.jp 配下へ移動している。
 
+import { setDefaultResultOrder } from 'node:dns';
+import { setDefaultAutoSelectFamily } from 'node:net';
+
+// 必ずIPv4で出る。
+//
+// 楽天のAPIはIP許可リスト方式で、登録できるのは事実上IPv4のアドレス。
+// 一方 Node は既定で Happy Eyeballs を使い、IPv6が使える回線ではIPv6を選ぶ。
+// すると楽天からは登録していないIPv6アドレスに見えて CLIENT_IP_NOT_ALLOWED になる。
+// 「正しいIPを登録したのに弾かれる」という、原因の見えない止まり方をする。
+//
+// IPv6アドレスを登録する手もあるが、プライバシー拡張で頻繁に変わるので許可リストと相性が悪い。
+// 出口をIPv4に固定するほうが安定する。
+setDefaultResultOrder('ipv4first');
+setDefaultAutoSelectFamily(false);
+
 export const ITEM_API = 'https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20260701';
 export const GENRE_API = 'https://openapi.rakuten.co.jp/ichibagt/api/IchibaGenre/Search/20260701';
 
@@ -56,9 +71,33 @@ export async function call(creds, base, params) {
       wait *= 2;
       continue;
     }
+    // 許可リスト落ちは原因が画面に出ないと直しようがない。
+    // 「登録したのに弾かれる」ときの実際の原因は、たいてい登録後にIPが変わったこと。
+    // 何を登録すればよいかをその場で出す。
+    if (res.status === 403 && /CLIENT_IP_NOT_ALLOWED/.test(body)) {
+      throw new Error(`許可されていないIPからの接続です。\n\n${await ipAdvice()}`);
+    }
     throw new Error(`HTTP ${res.status} — ${body.slice(0, 200)}`);
   }
   throw new Error('リトライ上限に達しました');
+}
+
+/** 今この瞬間の送信元IPv4を調べ、登録すべき値として提示する */
+async function ipAdvice() {
+  let ip = '(取得できませんでした)';
+  try {
+    const r = await fetch('https://api.ipify.org?format=json', { signal: AbortSignal.timeout(8000) });
+    if (r.ok) ip = (await r.json()).ip;
+  } catch { /* 提示できなくても本体のエラーは伝える */ }
+  return [
+    `  いま登録すべきIP: ${ip}`,
+    '',
+    '  楽天ウェブサービスのアプリ設定 → 「許可されたIPアドレス」に上記を追加してください。',
+    '  https://webservice.rakuten.co.jp/app/list',
+    '',
+    '  このIPは回線の都合で不定期に変わります（1日で変わった実績あり）。',
+    '  設定画面がCIDR表記を受け付けるなら、範囲で登録しておくと再発しません。',
+  ].join('\n');
 }
 
 const nameOf = g => g.nameJa ?? g.genreName ?? '';

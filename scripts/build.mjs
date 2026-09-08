@@ -46,15 +46,21 @@ const MAX_COMPARE = 4;
 const SSR_ROWS = 50;   // HTMLに直接書き出す件数。クローラが読む分。
 
 // URLに日本語を入れるとリンクの共有時に壊れやすいのでスラッグを持つ。
+//
+// searchName は検索面（title / description）で使う名前。
+// 「ラム」単体で検索すると**ラムダッシュ（シェーバー）とラム肉**に食われる ——
+// 「ラム コスパ」のサジェストは大半がシェーバーだった。酒として扱うには「ラム酒」と書く必要がある。
+// 表示名は変えない。ページの中で名乗るぶんには文脈があるので誤解されない。
 const GENRES = [
   { name: 'ウイスキー', slug: 'whisky' },
   { name: '焼酎', slug: 'shochu' },
   { name: 'ジン', slug: 'gin' },
-  { name: 'ラム', slug: 'rum' },
+  { name: 'ラム', slug: 'rum', searchName: 'ラム酒' },
   { name: 'ウォッカ', slug: 'vodka' },
   { name: 'テキーラ', slug: 'tequila' },
   { name: 'ブランデー', slug: 'brandy' },
 ];
+const searchNameOf = g => g.searchName ?? g.name;
 
 const PROMO = /限定|クーポン|OFF|オフ|ポイント|P\d+倍|倍[!！]?$|送料無料|セール|期間|エントリー|買い回り|マラソン|お買い物|割引|特価|配送|あす楽|即日|最短|翌日|在庫|新入荷|入荷|予約|数量|お一人様|税込|円\)|円）/;
 const BARE_PROMO = [
@@ -196,12 +202,18 @@ function page({ items, genre, path }) {
   const logSpan = Math.max(logHi - logLo, 0.01);
 
   const url = BASE + path;
+  // 検索面の語は実測に合わせる（content/KEYWORDS.md）。
+  // 「コスパ」と「ランキング」は全種別のサジェストに出るのに、我々は1つも使っていなかった。
+  // 逆に「純アルコール」は健康の文脈でしか検索されず、入口の語にならない ——
+  // だが我々を我々たらしめている数字なので、根拠として後ろに置く。
+  // h1 とサイト名は変えない。名乗りと検索面は別の役割を持つ。
+  const sName = genre ? searchNameOf(genre) : null;
   const title = genre
-    ? `${genre.name}の単価一覧 — 純アルコール20gあたり中央値${Math.round(st.median)}円`
-    : '蒸留酒 単価一覧 — 純アルコール20gあたりの価格で選ぶ';
+    ? `${sName}のコスパ比較 ${st.count}本 — 純アルコール20g単価ランキング（中央値${Math.round(st.median)}円）`
+    : `蒸留酒のコスパ比較 ${st.count.toLocaleString()}本 — 純アルコール20g単価ランキング`;
   const desc = genre
-    ? `楽天市場の${genre.name}${st.count}件を純アルコール20g（日本酒1合相当）あたりの価格で比較。中央値${Math.round(st.median)}円、最安${num(st.min)}円。度数と容量から機械的に算出し、ポイント還元込みの実質価格も出せます。`
-    : `楽天市場の蒸留酒${st.count}件を、純アルコール20g（日本酒1合相当）あたりの価格で横断比較。度数と容量から機械的に算出し、ポイント還元込みの実質価格も出せます。`;
+    ? `楽天市場の${sName}${st.count}件を、純アルコール20g（日本酒1合相当）あたりの価格で並べたランキング。中央値${Math.round(st.median)}円、最安${num(st.min)}円。度数と容量から機械的に算出し、ポイント還元込みの実質価格でも並べ替えられます。`
+    : `楽天市場の蒸留酒${st.count.toLocaleString()}件を、純アルコール20g（日本酒1合相当）あたりの価格で並べたコスパランキング。ウイスキー・焼酎・ジン・ラム酒・ウォッカ・テキーラ・ブランデーを同じ物差しで比較でき、ポイント還元込みの実質価格でも並べ替えられます。`;
   const h1 = genre ? `${genre.name}を単価で比べる` : '蒸留酒 単価一覧';
   const genreList = genre ? [genre.name] : db.genres;
 
