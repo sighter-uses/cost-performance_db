@@ -57,7 +57,7 @@
 37度・16,000ml・12,995円・★4.54（93件）
 → **20gあたり54.9円**
 
-[https://hb.afl.rakuten.co.jp/hgc/g00ra1fo.4zioh40f.g00ra1fo.4zioi206/?pc=https%3A%2F%2Fitem.rakuten.co.jp%2Fyokogoshi%2Ffujinomori_whisky_4000x4%2F&m=http%3A%2F%2Fm.rakuten.co.jp%2Fyokogoshi%2Fi%2F10001256%2F&rafcid=wsc_i_is_e7c2ee1c-d168-4943-8d3a-a0139c1b64f9](https://hb.afl.rakuten.co.jp/hgc/g00ra1fo.4zioh40f.g00ra1fo.4zioi206/?pc=https%3A%2F%2Fitem.rakuten.co.jp%2Fyokogoshi%2Ffujinomori_whisky_4000x4%2F&m=http%3A%2F%2Fm.rakuten.co.jp%2Fyokogoshi%2Fi%2F10001256%2F&rafcid=wsc_i_is_e7c2ee1c-d168-4943-8d3a-a0139c1b64f9)
+[楽天で見る](https://hb.afl.rakuten.co.jp/hgc/g00ra1fo.4zioh40f.g00ra1fo.4zioi206/?pc=https%3A%2F%2Fitem.rakuten.co.jp%2Fyokogoshi%2Ffujinomori_whisky_4000x4%2F&m=http%3A%2F%2Fm.rakuten.co.jp%2Fyokogoshi%2Fi%2F10001256%2F&rafcid=wsc_i_is_e7c2ee1c-d168-4943-8d3a-a0139c1b64f9)
 
 **54.9円というのは、焼酎の中央値199円すら下回っています。** 「安く酔うなら焼酎」という通念は、この1本の前では成立しません。
 
@@ -67,7 +67,7 @@
 37度・16,000ml・15,280円・★4.83（437件）
 → **20gあたり64.5円**
 
-[https://hb.afl.rakuten.co.jp/hgc/g00tfaro.4zioha26.g00tfaro.4zioi4fc/?pc=https%3A%2F%2Fitem.rakuten.co.jp%2Fsakayabic%2F510363-04%2F&m=http%3A%2F%2Fm.rakuten.co.jp%2Fsakayabic%2Fi%2F10000048%2F&rafcid=wsc_i_is_e7c2ee1c-d168-4943-8d3a-a0139c1b64f9](https://hb.afl.rakuten.co.jp/hgc/g00tfaro.4zioha26.g00tfaro.4zioi4fc/?pc=https%3A%2F%2Fitem.rakuten.co.jp%2Fsakayabic%2F510363-04%2F&m=http%3A%2F%2Fm.rakuten.co.jp%2Fsakayabic%2Fi%2F10000048%2F&rafcid=wsc_i_is_e7c2ee1c-d168-4943-8d3a-a0139c1b64f9)
+[楽天で見る](https://hb.afl.rakuten.co.jp/hgc/g00tfaro.4zioha26.g00tfaro.4zioi4fc/?pc=https%3A%2F%2Fitem.rakuten.co.jp%2Fsakayabic%2F510363-04%2F&m=http%3A%2F%2Fm.rakuten.co.jp%2Fsakayabic%2Fi%2F10000048%2F&rafcid=wsc_i_is_e7c2ee1c-d168-4943-8d3a-a0139c1b64f9)
 
 ---
 
@@ -103,7 +103,7 @@
 40度・1,125円・★4.80（85件）
 → **20gあたり100.4円**（370本中、安い側から5.9%）
 
-[https://hb.afl.rakuten.co.jp/hgc/g00q8iso.4zioha3d.g00q8iso.4zioi06f/?pc=https%3A%2F%2Fitem.rakuten.co.jp%2Fledled%2F3-white-horse-fine-old-p%2F&m=http%3A%2F%2Fm.rakuten.co.jp%2Fledled%2Fi%2F10003969%2F&rafcid=wsc_i_is_e7c2ee1c-d168-4943-8d3a-a0139c1b64f9](https://hb.afl.rakuten.co.jp/hgc/g00q8iso.4zioha3d.g00q8iso.4zioi06f/?pc=https%3A%2F%2Fitem.rakuten.co.jp%2Fledled%2F3-white-horse-fine-old-p%2F&m=http%3A%2F%2Fm.rakuten.co.jp%2Fledled%2Fi%2F10003969%2F&rafcid=wsc_i_is_e7c2ee1c-d168-4943-8d3a-a0139c1b64f9)
+[楽天で見る](https://hb.afl.rakuten.co.jp/hgc/g00q8iso.4zioha3d.g00q8iso.4zioi06f/?pc=https%3A%2F%2Fitem.rakuten.co.jp%2Fledled%2F3-white-horse-fine-old-p%2F&m=http%3A%2F%2Fm.rakuten.co.jp%2Fledled%2Fi%2F10003969%2F&rafcid=wsc_i_is_e7c2ee1c-d168-4943-8d3a-a0139c1b64f9)
 
 **4Lを買わなくても、中央値の1/5以下で買えるものはあります。** 大容量が最安なのは事実ですが、大容量でなければ安くならないというのは誤りです。
 
@@ -113,7 +113,7 @@
 37度・1,799円・★5.0（2件）
 → **20gあたり67.5円**（安い側から2.7%）
 
-[https://hb.afl.rakuten.co.jp/hgc/g00rryxo.4zioh2f0.g00rryxo.4zioi23b/?pc=https%3A%2F%2Fitem.rakuten.co.jp%2Fliquor-boss%2F22484b%2F&m=http%3A%2F%2Fm.rakuten.co.jp%2Fliquor-boss%2Fi%2F10008034%2F&rafcid=wsc_i_is_e7c2ee1c-d168-4943-8d3a-a0139c1b64f9](https://hb.afl.rakuten.co.jp/hgc/g00rryxo.4zioh2f0.g00rryxo.4zioi23b/?pc=https%3A%2F%2Fitem.rakuten.co.jp%2Fliquor-boss%2F22484b%2F&m=http%3A%2F%2Fm.rakuten.co.jp%2Fliquor-boss%2Fi%2F10008034%2F&rafcid=wsc_i_is_e7c2ee1c-d168-4943-8d3a-a0139c1b64f9)
+[楽天で見る](https://hb.afl.rakuten.co.jp/hgc/g00rryxo.4zioh2f0.g00rryxo.4zioi23b/?pc=https%3A%2F%2Fitem.rakuten.co.jp%2Fliquor-boss%2F22484b%2F&m=http%3A%2F%2Fm.rakuten.co.jp%2Fliquor-boss%2Fi%2F10008034%2F&rafcid=wsc_i_is_e7c2ee1c-d168-4943-8d3a-a0139c1b64f9)
 
 1,799円で純アルコール533g。**4Lに迫る単価でありながら、総額は700ml2本より安く済みます**（上のホワイトホース2本で2,250円）。レビューが2件しかないのは弱点なので、そこは割り引いて見てください。
 
@@ -128,7 +128,7 @@
 **サントリー ウイスキー 角瓶 700ml**
 40度・1,672円・★4.60（154件）
 
-[https://hb.afl.rakuten.co.jp/hgc/g00q8iso.4zioha3d.g00q8iso.4zioi06f/?pc=https%3A%2F%2Fitem.rakuten.co.jp%2Fledled%2F2-kakubin-700%2F&m=http%3A%2F%2Fm.rakuten.co.jp%2Fledled%2Fi%2F10001208%2F&rafcid=wsc_i_is_e7c2ee1c-d168-4943-8d3a-a0139c1b64f9](https://hb.afl.rakuten.co.jp/hgc/g00q8iso.4zioha3d.g00q8iso.4zioi06f/?pc=https%3A%2F%2Fitem.rakuten.co.jp%2Fledled%2F2-kakubin-700%2F&m=http%3A%2F%2Fm.rakuten.co.jp%2Fledled%2Fi%2F10001208%2F&rafcid=wsc_i_is_e7c2ee1c-d168-4943-8d3a-a0139c1b64f9)
+[楽天で見る](https://hb.afl.rakuten.co.jp/hgc/g00q8iso.4zioha3d.g00q8iso.4zioi06f/?pc=https%3A%2F%2Fitem.rakuten.co.jp%2Fledled%2F2-kakubin-700%2F&m=http%3A%2F%2Fm.rakuten.co.jp%2Fledled%2Fi%2F10001208%2F&rafcid=wsc_i_is_e7c2ee1c-d168-4943-8d3a-a0139c1b64f9)
 
 「角瓶は普通の値段」という感覚があるとしたら、それは**700mlという売れ筋サイズの中で普通**という意味です。
 
