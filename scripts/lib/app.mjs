@@ -102,13 +102,17 @@ export const appJS = (cfg) => `
     if (!introEnded && (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ')) endIntro(false);
   });
 
-  var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var seen = false;
-  try { seen = sessionStorage.getItem('sl-intro') === '1'; } catch (e) {}
-  if (location.search.indexOf('intro=1') >= 0) seen = false;
-  if (reduced || seen) endIntro(true);
-  else if (document.readyState === 'complete') playIntro();
-  else addEventListener('load', playIntro, { once: true });
+  // 年齢確認は演出より前に立つ（z-index 200 対 100）。先に流すと、
+  // 覆いの裏で誰にも見られないまま3.5秒が終わってしまう。確認のあとに始める。
+  function startIntro() {
+    var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var seen = false;
+    try { seen = sessionStorage.getItem('sl-intro') === '1'; } catch (e) {}
+    if (location.search.indexOf('intro=1') >= 0) seen = false;
+    if (reduced || seen) return endIntro(true);
+    if (document.readyState === 'complete') playIntro();
+    else addEventListener('load', playIntro, { once: true });
+  }
 
   /* ───── 2. 絞り込み ───────────────────────────────────────────── */
   var esc = function (s) {
@@ -435,7 +439,9 @@ export const appJS = (cfg) => `
   render();
 
   /* 年齢確認。JSで描くので、検索エンジンからは本文が隠れない */
-  if (read('sl-age') !== 'ok') {
+  if (read('sl-age') === 'ok') {
+    startIntro();
+  } else {
     var g = document.createElement('div');
     g.id = 'gate';
     g.innerHTML = '<div class="box"><p class="mk">AGE VERIFICATION</p><h2>20歳以上ですか？</h2>' +
@@ -443,7 +449,9 @@ export const appJS = (cfg) => `
       '<button type="button" class="buy" id="ageOk">20歳以上です</button>' +
       '<button type="button" class="no" id="ageNo">20歳未満です</button></div>';
     document.body.appendChild(g);
-    g.querySelector('#ageOk').addEventListener('click', function () { store('sl-age', 'ok'); g.remove(); });
+    g.querySelector('#ageOk').addEventListener('click', function () {
+      store('sl-age', 'ok'); g.remove(); startIntro();
+    });
     g.querySelector('#ageNo').addEventListener('click', function () { location.href = 'https://www.google.com/'; });
   }
 })();
