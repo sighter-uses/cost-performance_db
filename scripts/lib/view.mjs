@@ -26,9 +26,9 @@ export const GLASS = `
       <path d="M47 30 L58 231 Q59 241 69 241 L131 241 Q141 241 142 231 L153 30 Z"></path>
     </clipPath>
     <linearGradient id="glass-liquid" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#f0b562"></stop>
-      <stop offset="0.45" stop-color="#c87a24"></stop>
-      <stop offset="1" stop-color="#7d410d"></stop>
+      <stop offset="0" stop-color="#ffcf87"></stop>
+      <stop offset="0.45" stop-color="#d98a2c"></stop>
+      <stop offset="1" stop-color="#965012"></stop>
     </linearGradient>
     <linearGradient id="glass-body" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0" stop-color="rgba(255,238,209,.40)"></stop>
@@ -169,7 +169,11 @@ img{max-width:100%}
 .glass-pool{opacity:.5}
 
 /* オープニング中: 覆いの上へ持ち上げる。位置は JS が FLIP で与える */
-html.intro-on .glass-slot{z-index:110;transition:none}
+html.intro-on .glass-slot{z-index:110;transition:none;
+  filter:drop-shadow(0 0 46px rgba(226,150,66,.42)) drop-shadow(0 10px 30px rgba(0,0,0,.6))}
+html.intro-on .glass-edge{stroke:rgba(255,238,206,.85)}
+html.intro-on .glass-fill{opacity:.55}
+html.intro-on .glass-pool{opacity:.85}
 html.intro-pour .glass-liquid{transition:transform 1250ms cubic-bezier(.33,.9,.42,1)}
 html.intro-pour .glass-liquid{transform:translateY(96px)}
 html.intro-pour .glass-surface{opacity:.92;transition:opacity 220ms linear}
@@ -191,7 +195,9 @@ html.intro-done .glass-surface{opacity:.92}
 /* ── オープニングの覆い ─────────────────────────────────────── */
 .intro{position:fixed;inset:0;z-index:100;display:grid;place-items:center}
 html.intro-done .intro{display:none}
-.intro-veil{position:absolute;inset:0;background:rgba(6,5,5,.93);
+.intro-veil{position:absolute;inset:0;
+  /* 中央に暖色の光を置く。真っ黒の上に黒いガラスを描いても何も見えない。 */
+  background:radial-gradient(42rem 34rem at 50% 48%,rgba(150,86,28,.34),rgba(6,5,5,0) 68%),rgba(6,5,5,.94);
   -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
 .intro-word{position:absolute;bottom:16vh;margin:0;font-family:var(--f-disp);font-size:clamp(22px,3vw,34px);
   letter-spacing:.3em;color:var(--gold);opacity:0;transition:opacity 500ms linear}
