@@ -411,7 +411,6 @@ if(!seen&&!matchMedia('(prefers-reduced-motion: reduce)').matches)c='intro-on';
       <a href="#work">検索</a>
       <a href="#work">ランキング</a>
       <a href="#compare">比較</a>
-      ${GENRES.map(g => `<a href="/${g.slug}/"${genre && genre.slug === g.slug ? ' aria-current="page"' : ''}>${esc(g.name)}</a>`).join('\n      ')}
     </nav>
     <div class="top-act">
       <button type="button" class="icon-btn" aria-label="検索へ移動" onclick="document.getElementById('q').focus()">

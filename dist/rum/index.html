@@ -63,23 +63,25 @@ img{max-width:100%}
 .shell{max-width:var(--shell);margin:0 auto;padding:0 24px}
 
 /* ── バーの地。既定は画像なしで、暖色の光源を重ねて作る ───────────── */
-.bar{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.bar{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0;isolation:isolate}
 .bar::before{content:'';position:absolute;inset:0;background:var(--bar-image,none);
-  background-size:cover;background-position:center 38%;opacity:.55;filter:saturate(.85)}
-.bar-lights{position:absolute;inset:0;
+  background-size:cover;background-position:center 42%;opacity:1;filter:saturate(1.05) brightness(1.08)}
+.bar-lights{position:absolute;inset:0;mix-blend-mode:screen;opacity:.55;
   background:
     radial-gradient(38rem 24rem at 12% 22%,rgba(255,168,72,.30),transparent 62%),
     radial-gradient(30rem 20rem at 78% 16%,rgba(255,142,48,.24),transparent 64%),
     radial-gradient(22rem 16rem at 52% 68%,rgba(255,196,110,.16),transparent 66%),
     radial-gradient(44rem 30rem at 92% 74%,rgba(180,96,26,.16),transparent 64%)}
-.bar-shelf{position:absolute;inset:0;opacity:.5;
+.bar-shelf{position:absolute;inset:0;opacity:.18;
   background:repeating-linear-gradient(90deg,
     rgba(255,186,104,.055) 0 4px,transparent 4px 13px,
     rgba(255,152,70,.045) 13px 17px,transparent 17px 30px);
   -webkit-mask-image:linear-gradient(to bottom,#000 0,#000 46%,transparent 78%);
   mask-image:linear-gradient(to bottom,#000 0,#000 46%,transparent 78%)}
 .bar-veil{position:absolute;inset:0;
-  background:linear-gradient(to bottom,rgba(10,9,8,.42) 0%,rgba(10,9,8,.62) 46%,var(--bg) 96%)}
+  background:
+    linear-gradient(to right,rgba(8,7,6,.94) 0%,rgba(8,7,6,.72) 42%,rgba(8,7,6,.38) 68%,rgba(8,7,6,.62) 100%),
+    linear-gradient(to bottom,rgba(8,7,6,.55) 0%,rgba(8,7,6,.10) 34%,rgba(8,7,6,.66) 78%,var(--bg) 99%)}
 
 /* ── ヘッダー ───────────────────────────────────────────────── */
 .top{position:sticky;top:0;z-index:40;background:rgba(10,9,8,.92);border-bottom:1px solid var(--line)}
@@ -98,11 +100,23 @@ img{max-width:100%}
 .icon-btn:hover{color:var(--ink);border-color:var(--line2)}
 
 /* ── ヒーロー ───────────────────────────────────────────────── */
-.hero{position:relative;isolation:isolate;border-bottom:1px solid var(--line)}
-.hero-in{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1fr) 300px;
-  gap:40px;align-items:center;min-height:300px;padding:48px 0 54px}
+/* .hero に isolation を置かないこと。積み重ねコンテキストができて、
+   グラスの z-index が中に閉じ込められ、暗幕の下に潜って ぼかされる。
+   混色を使うのは .bar の中だけなので、隔離もそこで足りる。 */
+.hero{position:relative;border-bottom:1px solid var(--line)}
+.hero-in{position:relative;display:grid;
+  /* グラスに独立した列を与える。絶対配置で重ねると必ず文字に被る。 */
+  /* 列の並びは DOM の並び（見出し → 気分 → グラス）に合わせること。
+     入れ替わっていると、気分パネルがグラス用の狭い列に入って潰れる。 */
+  grid-template-columns:minmax(0,1fr) 290px minmax(190px,250px);
+  gap:36px;align-items:center;min-height:360px;
+  /* padding の一括指定は使わない。.shell の左右余白まで消してしまい、
+     見出しが画面の左端に貼り付く。 */
+  padding-top:52px}
 .hero-copy{max-width:36rem}
-.hero h1{margin:0 0 14px;font-size:clamp(28px,3.4vw,42px);font-weight:300;line-height:1.32;letter-spacing:.01em}
+.hero h1{margin:0 0 14px;font-size:clamp(27px,3.2vw,42px);font-weight:300;line-height:1.34;letter-spacing:.01em;
+  /* 「ウイスキーの一/杯に、」のように語の途中で割れるのを防ぐ */
+  word-break:keep-all;overflow-wrap:break-word}
 .hero h1 em{font-style:normal;font-weight:700}
 .hero p{margin:0 0 26px;font-size:14.5px;line-height:1.95;color:var(--sub)}
 .seek{display:flex;align-items:center;gap:12px;padding:0 6px 0 16px;background:rgba(18,16,14,.86);
@@ -122,40 +136,25 @@ img{max-width:100%}
 .moods svg{width:15px;height:15px;color:var(--gold);flex:none}
 
 /* ── グラス。DOMは1つ。オープニングではこれを画面中央へ飛ばす ─────── */
-.glass-slot{position:absolute;right:calc(50% - min(38vw,540px));bottom:-10px;
-  width:clamp(120px,15vw,196px);z-index:2;pointer-events:none;
-  /* FLIPの中心計算が原点の位置に依存するため、原点は必ず中央に置くこと。
-     88%にしていたときは、画面中央へ寄せたつもりのグラスが63pxずれた。 */
+.glass-slot{position:relative;width:100%;max-width:250px;justify-self:center;align-self:end;
+  margin-bottom:-2px;z-index:2;pointer-events:none;
+  /* FLIPの中心計算が原点に依存するので、原点は必ず中央に置くこと */
   transform-origin:50% 50%;will-change:transform,opacity}
-.glass{display:block;width:100%;height:auto;overflow:visible}
-.glass-liquid{transform:translateY(252px)}
-.glass-surface{opacity:0}
-.glass-pour{opacity:0}
-.glass-pool{opacity:.5}
-
-/* オープニング中: 覆いの上へ持ち上げる。位置は JS が FLIP で与える */
-html.intro-on .glass-slot{z-index:110;transition:none;
-  filter:drop-shadow(0 0 46px rgba(226,150,66,.42)) drop-shadow(0 10px 30px rgba(0,0,0,.6))}
-html.intro-on .glass-edge{stroke:rgba(255,238,206,.85)}
-html.intro-on .glass-fill{opacity:.55}
-html.intro-on .glass-pool{opacity:.85}
-html.intro-pour .glass-liquid{transition:transform 1250ms cubic-bezier(.33,.9,.42,1)}
-html.intro-pour .glass-liquid{transform:translateY(96px)}
-html.intro-pour .glass-surface{opacity:.92;transition:opacity 220ms linear}
-html.intro-pour .glass-pour{opacity:1;animation:pour 1150ms linear}
-html.intro-settle .glass-liquid{animation:settle 900ms cubic-bezier(.22,.9,.3,1)}
-html.intro-travel .glass-slot{transition:transform 900ms cubic-bezier(.19,.9,.28,1.06),opacity 300ms linear}
-html.intro-done .glass-liquid{transform:translateY(96px)}
-html.intro-done .glass-surface{opacity:.92}
-
-@keyframes pour{0%{opacity:0}8%{opacity:1}88%{opacity:1}100%{opacity:0}}
-@keyframes settle{
-  0%{transform:translateY(96px) scaleY(1)}
-  22%{transform:translateY(90px) scaleY(1.012)}
-  48%{transform:translateY(99px) scaleY(.994)}
-  74%{transform:translateY(94.5px) scaleY(1.004)}
-  100%{transform:translateY(96px) scaleY(1)}
-}
+.glass{position:relative;width:100%;aspect-ratio:540/766;overflow:hidden}
+.glass-video{display:block;width:100%;height:100%;object-fit:cover;background:#070605}
+/* 四角い映像の縁を地に溶かす。
+   上から暗い色を重ねる方法だと、背後の色が変わる場所で境目が出る。
+   映像そのものを mask で透明に落とすほうが、どこに置いても馴染む。 */
+.glass{-webkit-mask-image:radial-gradient(68% 60% at 50% 47%,#000 52%,rgba(0,0,0,.72) 76%,transparent 99%);
+  mask-image:radial-gradient(68% 60% at 50% 47%,#000 52%,rgba(0,0,0,.72) 76%,transparent 99%)}
+/* 演出中は背後に光を置き、縁の溶かしを弱める */
+.glass-slot::before{content:'';position:absolute;inset:-22% -34% -14%;z-index:-1;opacity:0;
+  background:radial-gradient(52% 44% at 50% 56%,rgba(226,150,66,.46),rgba(226,150,66,0) 70%);
+  transition:opacity 700ms linear}
+html.intro-on .glass-slot{z-index:110;transition:none}
+html.intro-on .glass-slot::before{opacity:1}
+html.intro-travel .glass-slot{transition:transform 880ms cubic-bezier(.2,.86,.3,1.04),opacity 320ms linear}
+html.intro-travel .glass-slot::before{opacity:0}
 
 /* ── オープニングの覆い ─────────────────────────────────────── */
 .intro{position:fixed;inset:0;z-index:100;display:grid;place-items:center}
@@ -341,13 +340,19 @@ footer dd{margin:0}
   .work{grid-template-columns:208px minmax(0,1fr)}
   .panel{display:none}
 }
+@media (max-width:1080px){
+  /* 3列に収まらなくなる幅。気分パネルを見出しの下へ回し、グラスは右に残す。 */
+  .hero-in{grid-template-columns:minmax(0,1fr) minmax(190px,240px);gap:28px}
+  .hero-copy{grid-column:1}
+  .moods{grid-column:1;grid-row:2;margin-bottom:26px}
+  .glass-slot{grid-column:2;grid-row:1 / span 2}
+}
 @media (max-width:900px){
   .shell{padding:0 16px}
   .top-in{height:58px;gap:14px}
   .nav{display:none}
-  .hero-in{grid-template-columns:1fr;gap:26px;padding:34px 0 40px;min-height:0}
-  .moods{order:3}
-  .glass-slot{right:16px;bottom:auto;top:-16px;width:96px;opacity:.5}
+  .hero-in{grid-template-columns:1fr;gap:22px;padding-top:28px;min-height:0}
+  .hero-copy{order:1} .glass-slot{order:2;max-width:170px} .moods{order:3;margin-bottom:26px}
   .work{grid-template-columns:1fr;padding-top:18px}
   .side{position:static}
   .row{grid-template-columns:auto 76px minmax(0,1fr) 112px;gap:12px;padding:12px}
@@ -359,11 +364,9 @@ footer dd{margin:0}
 }
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
-  .glass-liquid,.glass-slot,.intro,.veiled,.row,.fill{transition:none!important;animation:none!important}
-  .glass-liquid{transform:translateY(96px)}
-  .glass-surface{opacity:.92}
+  .glass,.glass-slot,.glass-slot::before,.intro,.veiled,.row{transition:none!important;animation:none!important}
 }
-</style>
+:root{--bar-image:url(/assets/bar.jpg)}</style>
 </head>
 <body>
 
@@ -384,13 +387,6 @@ footer dd{margin:0}
       <a href="#work">検索</a>
       <a href="#work">ランキング</a>
       <a href="#compare">比較</a>
-      <a href="/whisky/">ウイスキー</a>
-      <a href="/shochu/">焼酎</a>
-      <a href="/gin/">ジン</a>
-      <a href="/rum/" aria-current="page">ラム</a>
-      <a href="/vodka/">ウォッカ</a>
-      <a href="/tequila/">テキーラ</a>
-      <a href="/brandy/">ブランデー</a>
     </nav>
     <div class="top-act">
       <button type="button" class="icon-btn" aria-label="検索へ移動" onclick="document.getElementById('q').focus()">
@@ -425,48 +421,12 @@ footer dd{margin:0}
       <button type="button" data-mood="pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 3l2.6 5.6 6.4.7-4.8 4.3 1.4 6.4L12 16.8 6.4 20l1.4-6.4L3 9.3l6.4-.7Z"></path></svg>みんなの人気ランキング</button>
     </div>
     <div class="glass-slot">
-<svg class="glass" viewBox="0 0 200 270" aria-hidden="true" focusable="false">
-  <defs>
-    <clipPath id="glass-inside">
-      <path d="M47 30 L58 231 Q59 241 69 241 L131 241 Q141 241 142 231 L153 30 Z"></path>
-    </clipPath>
-    <linearGradient id="glass-liquid" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ffcf87"></stop>
-      <stop offset="0.45" stop-color="#d98a2c"></stop>
-      <stop offset="1" stop-color="#965012"></stop>
-    </linearGradient>
-    <linearGradient id="glass-body" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="rgba(255,238,209,.40)"></stop>
-      <stop offset="0.16" stop-color="rgba(255,238,209,.05)"></stop>
-      <stop offset="0.78" stop-color="rgba(255,238,209,.05)"></stop>
-      <stop offset="1" stop-color="rgba(255,238,209,.28)"></stop>
-    </linearGradient>
-    <radialGradient id="glass-pool" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0" stop-color="rgba(255,190,110,.55)"></stop>
-      <stop offset="1" stop-color="rgba(255,190,110,0)"></stop>
-    </radialGradient>
-  </defs>
-
-  <!-- 注がれる筋。Scene 2 のあいだだけ見える -->
-  <rect class="glass-pour" x="96" y="-40" width="8" height="78" rx="4" fill="url(#glass-liquid)"></rect>
-
-  <g clip-path="url(#glass-inside)">
-    <g class="glass-liquid">
-      <rect x="40" y="0" width="120" height="252" fill="url(#glass-liquid)"></rect>
-      <ellipse class="glass-surface" cx="100" cy="0" rx="58" ry="7" fill="#f6c274" opacity=".92"></ellipse>
-    </g>
-  </g>
-
-  <!-- 器。液体より上に重ねて、ガラス越しに見えるようにする -->
-  <path class="glass-fill" d="M47 30 L58 231 Q59 241 69 241 L131 241 Q141 241 142 231 L153 30 Z" fill="url(#glass-body)"></path>
-  <path class="glass-edge" d="M44 27 L55.5 232 Q57 244 68 244 L132 244 Q143 244 144.5 232 L156 27"
-        fill="none" stroke="rgba(255,231,196,.55)" stroke-width="2.4" stroke-linejoin="round"></path>
-  <ellipse cx="100" cy="27" rx="56" ry="9" fill="none" stroke="rgba(255,231,196,.62)" stroke-width="2.4"></ellipse>
-  <ellipse cx="100" cy="240" rx="40" ry="6" fill="rgba(255,231,196,.10)"></ellipse>
-  <path d="M62 44 L71 218" fill="none" stroke="rgba(255,245,225,.30)" stroke-width="3" stroke-linecap="round"></path>
-  <path d="M138 52 L132 176" fill="none" stroke="rgba(255,245,225,.14)" stroke-width="2" stroke-linecap="round"></path>
-  <ellipse class="glass-pool" cx="100" cy="252" rx="78" ry="14" fill="url(#glass-pool)"></ellipse>
-</svg></div>
+<div class="glass" aria-hidden="true">
+  <video class="glass-video" id="pour" muted playsinline preload="none" tabindex="-1"
+         poster="/assets/glass-poster.jpg" width="540" height="766">
+    <source src="/assets/pour.mp4" type="video/mp4">
+  </video>
+</div></div>
   </div>
 </section>
 
@@ -677,7 +637,9 @@ footer dd{margin:0}
     if (introEnded) return;
     introEnded = true;
     clearTimers();
-    if (slot) slot.style.transform = '';
+    if (slot) { slot.style.transform = ''; slot.style.transition = ''; slot.style.opacity = ''; }
+    // 再生しない経路では poster（＝映像の最終フレーム）がそのまま出る。
+    // 再生した場合の終わりの絵と同じなので、経路によって見え方が変わらない。
     root.classList.remove('intro-on', 'intro-pour', 'intro-settle', 'intro-travel', 'intro-out');
     root.classList.add('intro-done');
     if (intro) {
@@ -690,36 +652,52 @@ footer dd{margin:0}
   }
 
   function playIntro() {
-    if (!slot || !intro) return endIntro(true);
+    var slotEl = slot, video = $('pour');
+    if (!slotEl || !intro) return endIntro(true);
     scrollTo(0, 0);
-    var r = slot.getBoundingClientRect();
+    var r = slotEl.getBoundingClientRect();
     if (!r.height) return endIntro(true);
-    var target = Math.min(innerHeight * 0.5, 430);
+    var target = Math.min(innerHeight * 0.62, 560);
     var k = target / r.height;
     var dx = innerWidth / 2 - (r.left + r.width / 2);
     var dy = innerHeight / 2 - (r.top + r.height / 2);
-    slot.style.opacity = '0';
-    slot.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(' + k + ')';
+    slotEl.style.opacity = '0';
+    slotEl.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(' + k + ')';
     root.classList.add('intro-on');
 
-    // Scene 1 — グラスが浮かび上がる
+    // Scene 1 — 暗い画面にグラスが浮かび上がる
     timers.push(setTimeout(function () {
-      slot.style.transition = 'opacity 560ms linear';
-      slot.style.opacity = '1';
+      slotEl.style.transition = 'opacity 520ms linear';
+      slotEl.style.opacity = '1';
     }, 40));
-    // Scene 2 — 注ぐ
-    timers.push(setTimeout(function () { root.classList.add('intro-pour'); }, 620));
-    // 液面が落ち着く
-    timers.push(setTimeout(function () { root.classList.add('intro-settle'); }, 1880));
-    // Scene 3 — 手前へ。inline transform を外すと本来の位置へ戻る
+
+    // Scene 2 — 実際に注がれる映像。自動再生が拒否されたら演出ごと畳む。
+    if (!video) return endIntro(true);
+    video.preload = 'auto';
+    video.currentTime = 0;
+    var started = false;
     timers.push(setTimeout(function () {
-      slot.style.transition = '';
+      var pr = video.play();
+      if (pr && pr.catch) pr.catch(function () { endIntro(false); });
+      else started = true;
+    }, 360));
+    video.addEventListener('playing', function () { started = true; }, { once: true });
+    // 再生が始まらない端末では待たせない
+    timers.push(setTimeout(function () { if (!started) endIntro(false); }, 1500));
+
+    // Scene 3 — 映像が終わる少し前から手前へ。inline transform を外すと本来の位置へ戻る。
+    timers.push(setTimeout(function () {
+      slotEl.style.transition = '';
       root.classList.add('intro-travel');
-      slot.style.transform = '';
-    }, 2040));
+      slotEl.style.transform = '';
+    }, 2760));
     // Scene 4 — 覆いが引き、ホームが現れる
-    timers.push(setTimeout(function () { root.classList.add('intro-out'); }, 2820));
-    timers.push(setTimeout(function () { endIntro(false); }, 3460));
+    timers.push(setTimeout(function () { root.classList.add('intro-out'); }, 3340));
+    timers.push(setTimeout(function () { endIntro(false); }, 3980));
+    // 映像が先に終わったらそこで畳む
+    video.addEventListener('ended', function () {
+      timers.push(setTimeout(function () { endIntro(false); }, 420));
+    }, { once: true });
   }
 
   var skip = $('introSkip');

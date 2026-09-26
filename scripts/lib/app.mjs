@@ -51,7 +51,9 @@ export const appJS = (cfg) => `
     if (introEnded) return;
     introEnded = true;
     clearTimers();
-    if (slot) slot.style.transform = '';
+    if (slot) { slot.style.transform = ''; slot.style.transition = ''; slot.style.opacity = ''; }
+    // 再生しない経路では poster（＝映像の最終フレーム）がそのまま出る。
+    // 再生した場合の終わりの絵と同じなので、経路によって見え方が変わらない。
     root.classList.remove('intro-on', 'intro-pour', 'intro-settle', 'intro-travel', 'intro-out');
     root.classList.add('intro-done');
     if (intro) {
@@ -64,36 +66,52 @@ export const appJS = (cfg) => `
   }
 
   function playIntro() {
-    if (!slot || !intro) return endIntro(true);
+    var slotEl = slot, video = $('pour');
+    if (!slotEl || !intro) return endIntro(true);
     scrollTo(0, 0);
-    var r = slot.getBoundingClientRect();
+    var r = slotEl.getBoundingClientRect();
     if (!r.height) return endIntro(true);
-    var target = Math.min(innerHeight * 0.5, 430);
+    var target = Math.min(innerHeight * 0.62, 560);
     var k = target / r.height;
     var dx = innerWidth / 2 - (r.left + r.width / 2);
     var dy = innerHeight / 2 - (r.top + r.height / 2);
-    slot.style.opacity = '0';
-    slot.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(' + k + ')';
+    slotEl.style.opacity = '0';
+    slotEl.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(' + k + ')';
     root.classList.add('intro-on');
 
-    // Scene 1 — グラスが浮かび上がる
+    // Scene 1 — 暗い画面にグラスが浮かび上がる
     timers.push(setTimeout(function () {
-      slot.style.transition = 'opacity 560ms linear';
-      slot.style.opacity = '1';
+      slotEl.style.transition = 'opacity 520ms linear';
+      slotEl.style.opacity = '1';
     }, 40));
-    // Scene 2 — 注ぐ
-    timers.push(setTimeout(function () { root.classList.add('intro-pour'); }, 620));
-    // 液面が落ち着く
-    timers.push(setTimeout(function () { root.classList.add('intro-settle'); }, 1880));
-    // Scene 3 — 手前へ。inline transform を外すと本来の位置へ戻る
+
+    // Scene 2 — 実際に注がれる映像。自動再生が拒否されたら演出ごと畳む。
+    if (!video) return endIntro(true);
+    video.preload = 'auto';
+    video.currentTime = 0;
+    var started = false;
     timers.push(setTimeout(function () {
-      slot.style.transition = '';
+      var pr = video.play();
+      if (pr && pr.catch) pr.catch(function () { endIntro(false); });
+      else started = true;
+    }, 360));
+    video.addEventListener('playing', function () { started = true; }, { once: true });
+    // 再生が始まらない端末では待たせない
+    timers.push(setTimeout(function () { if (!started) endIntro(false); }, 1500));
+
+    // Scene 3 — 映像が終わる少し前から手前へ。inline transform を外すと本来の位置へ戻る。
+    timers.push(setTimeout(function () {
+      slotEl.style.transition = '';
       root.classList.add('intro-travel');
-      slot.style.transform = '';
-    }, 2040));
+      slotEl.style.transform = '';
+    }, 2760));
     // Scene 4 — 覆いが引き、ホームが現れる
-    timers.push(setTimeout(function () { root.classList.add('intro-out'); }, 2820));
-    timers.push(setTimeout(function () { endIntro(false); }, 3460));
+    timers.push(setTimeout(function () { root.classList.add('intro-out'); }, 3340));
+    timers.push(setTimeout(function () { endIntro(false); }, 3980));
+    // 映像が先に終わったらそこで畳む
+    video.addEventListener('ended', function () {
+      timers.push(setTimeout(function () { endIntro(false); }, 420));
+    }, { once: true });
   }
 
   var skip = $('introSkip');
