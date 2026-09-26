@@ -238,3 +238,13 @@ test('抽選商品: parseItem が reason:random で弾く', () => {
   assert.equal(r.ok, false);
   assert.equal(r.reason, 'random');
 });
+
+test('度数: 3度以下は説明文の紛れ込みとして捨てる', () => {
+  // 蒸留酒に2度の商品は実在しない。説明文の「2%」を拾うと純アルコール量が1/20になり、
+  // 誤った最高額が単価ランキングの先頭に立つ。
+  assert.equal(parseAbv('ブランデー16年 500ml 2%'), null);
+  assert.equal(parseAbv('グラッパ 700ml 1度'), null);
+  // 5〜9度のRTDは実在するので残す
+  assert.equal(parseAbv('サントリー 翠ジンソーダ 7% 350ml'), 7);
+  assert.equal(parseAbv('日の丸ジン 蔵風土ジンソーダ 6度 355ml'), 6);
+});
