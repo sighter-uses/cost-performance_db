@@ -163,6 +163,12 @@ img{max-width:100%}
 .glass-slot::before{content:'';position:absolute;inset:-22% -34% -14%;z-index:-1;opacity:0;
   background:radial-gradient(52% 44% at 50% 56%,rgba(226,150,66,.46),rgba(226,150,66,0) 70%);
   transition:opacity 700ms linear}
+/* 3D版（試作）。黒地で描いた canvas を screen で地に重ね、黒を消す。
+   canvas 自身と .glass-slot の両方に掛けること。.glass-slot は積み重ねコンテキストなので、
+   canvas だけに掛けても slot の外（背景の写真）とは混ざらない。 */
+.glass-slot.is-3d{mix-blend-mode:screen}
+.glass-slot.is-3d .glass{-webkit-mask-image:none;mask-image:none}
+.glass-canvas{display:block;position:absolute;inset:0;width:100%;height:100%;mix-blend-mode:screen}
 html.intro-on .glass-slot{z-index:110;transition:none}
 html.intro-on .glass-slot::before{opacity:1}
 html.intro-travel .glass-slot{transition:transform 880ms cubic-bezier(.2,.86,.3,1.04),opacity 320ms linear}

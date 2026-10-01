@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="dark">
+<title>グラスの比較 — 映像版と3D版 | SpiritLens</title>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js"}}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Murecho:wght@300..800&display=swap">
+<style>
+body{margin:0;background:#0a0908;color:#f4eee2;font-family:Murecho,'Hiragino Sans',sans-serif;line-height:1.8}
+main{max-width:980px;margin:0 auto;padding:40px 20px 64px}
+h1{margin:0 0 6px;font-size:24px;font-weight:600}
+p{margin:0 0 22px;color:#ab9f8c;font-size:13.5px}
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+figure{margin:0}
+.stage{position:relative;aspect-ratio:540/766;overflow:hidden;border:1px solid rgba(226,198,150,.13);
+  background:linear-gradient(rgba(8,7,6,.55),rgba(8,7,6,.78)),url(/assets/bar.jpg) center 42%/cover}
+.stage video,.stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.stage video{object-fit:cover}
+.stage canvas{mix-blend-mode:screen}
+figcaption{margin-top:10px;font-size:13px;color:#ab9f8c}
+figcaption b{color:#f4eee2;margin-right:8px}
+.acts{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+.acts button,.acts a{padding:11px 18px;border-radius:3px;font-size:13px;cursor:pointer;text-decoration:none}
+.acts button{background:#e3b671;color:#16110a;border:0;font-weight:700}
+.acts a{border:1px solid rgba(226,198,150,.26);color:#ab9f8c}
+.acts a:hover{color:#f4eee2;border-color:#e3b671}
+.err{color:#e9a38b}
+@media (max-width:640px){.pair{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+  <h1>グラスの比較 — 映像版と3D版</h1>
+  <p>同じ「注ぐ」演出を2通りで作っています。左は実写の映像、右は Three.js で組んだ3Dです。
+    3D版は背景が透明なので地の写真にそのまま溶け込みます（左は四角い映像の縁をぼかして馴染ませています）。</p>
+  <div class="pair">
+    <figure>
+      <div class="stage"><video id="v" muted playsinline preload="auto" poster="/assets/glass-poster.jpg">
+        <source src="/assets/pour.mp4" type="video/mp4"></video></div>
+      <figcaption><b>映像版</b>実写（Pexels）を切り出して圧縮。190KB</figcaption>
+    </figure>
+    <figure>
+      <div class="stage"><canvas id="c" aria-label="3Dのグラス"></canvas></div>
+      <figcaption><b>3D版（試作）</b>参照映像の最終フレームから輪郭を拾った回転体</figcaption>
+    </figure>
+  </div>
+  <div class="acts">
+    <button type="button" id="replay">もう一度再生</button>
+    <a href="/?glass=video&amp;intro=1">ホームで映像版を見る</a>
+    <a href="/?glass=3d&amp;intro=1">ホームで3D版を見る</a>
+  </div>
+  <p id="msg" class="err" hidden></p>
+</main>
+<script type="module">
+  const v = document.getElementById('v');
+  let g = null;
+  try {
+    const m = await import('/assets/glass3d.js');
+    g = m.mount(document.getElementById('c'));
+  } catch (e) {
+    const msg = document.getElementById('msg');
+    msg.hidden = false;
+    msg.textContent = 'この端末では3D版を表示できませんでした（' + (e && e.message ? e.message : e) + '）';
+  }
+  function replay() {
+    v.currentTime = 0;
+    v.play().catch(() => {});
+    if (g) g.play();
+  }
+  document.getElementById('replay').addEventListener('click', replay);
+  setTimeout(replay, 500);
+</script>
+</body>
+</html>

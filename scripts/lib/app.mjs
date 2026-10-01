@@ -37,13 +37,52 @@ export const appJS = (cfg) => `
 
   /* ───── 1. オープニング ─────────────────────────────────────────
      グラスはヒーロー内の最終位置にある1要素。読み込み時にその矩形を測り、
-     画面中央へ寄せる transform を無транジションで当て（FLIP）、
+     画面中央へ寄せる transform を無トランジションで当て（FLIP）、
      最後に transform を外すと自然な位置へ戻る。要素を入れ替えないので
      「別の画像に切り替わった」ように見えることがない。 */
   var slot = document.querySelector('.glass-slot');
   var intro = $('intro');
   var timers = [];
   var introEnded = false;
+  var introPlaying = false;
+
+  /* 3D版のグラス（試作）。?glass=3d で有効になり、?glass=video で映像版に戻る。
+     選んだ側は保存して、ページを移っても保つ（比べながら回遊できるように）。
+     読み込めない・WebGLが使えない端末では、何もせず映像版のまま。 */
+  var qs = location.search;
+  if (/[?&]glass=3d(&|$)/.test(qs)) store('sl-glass', '3d');
+  else if (/[?&]glass=video(&|$)/.test(qs)) store('sl-glass');
+  var module3d = null, glass3d = null;
+
+  function attach3d() {
+    if (glass3d || !module3d || !slot) return;
+    var box = slot.querySelector('.glass'), video = $('pour');
+    var canvas = document.createElement('canvas');
+    canvas.className = 'glass-canvas';
+    canvas.setAttribute('aria-hidden', 'true');
+    box.appendChild(canvas);
+    try {
+      glass3d = module3d.mount(canvas);
+      slot.classList.add('is-3d');
+      if (video) video.hidden = true;
+    } catch (e) {
+      canvas.remove();
+      glass3d = null;
+      if (window.console) console.warn('3D版のグラスを描けないため映像版で表示します', e);
+    }
+  }
+
+  var glassReady = Promise.resolve();
+  if (read('sl-glass') === '3d' && slot) {
+    glassReady = import('/assets/glass3d.js').then(function (m) {
+      module3d = m;
+      // 映像版で演出が始まってしまった後に届いた場合は、演出が終わってから差し替える。
+      // 途中で入れ替えると「別の物に切り替わった」ように見える。
+      if (!introPlaying) attach3d();
+    }).catch(function (e) {
+      if (window.console) console.warn('3D版の読み込みに失敗したため映像版で表示します', e);
+    });
+  }
 
   function clearTimers() { timers.forEach(clearTimeout); timers = []; }
 
@@ -52,6 +91,9 @@ export const appJS = (cfg) => `
     introEnded = true;
     clearTimers();
     if (slot) { slot.style.transform = ''; slot.style.transition = ''; slot.style.opacity = ''; }
+    introPlaying = false;
+    if (glass3d) { glass3d.setScale(1); glass3d.showFilled(); }
+    else if (module3d) attach3d();
     // 再生しない経路では poster（＝映像の最終フレーム）がそのまま出る。
     // 再生した場合の終わりの絵と同じなので、経路によって見え方が変わらない。
     root.classList.remove('intro-on', 'intro-pour', 'intro-settle', 'intro-travel', 'intro-out');
@@ -84,6 +126,21 @@ export const appJS = (cfg) => `
       slotEl.style.transition = 'opacity 520ms linear';
       slotEl.style.opacity = '1';
     }, 40));
+
+    introPlaying = true;
+    if (glass3d) {
+      // Scene 2 は3D側の時間軸で進む。拡大表示されるぶん内部解像度を上げておく。
+      glass3d.setScale(k);
+      timers.push(setTimeout(function () { glass3d.play(); }, 40));
+      timers.push(setTimeout(function () {
+        slotEl.style.transition = '';
+        root.classList.add('intro-travel');
+        slotEl.style.transform = '';
+      }, 2040));
+      timers.push(setTimeout(function () { root.classList.add('intro-out'); }, 2820));
+      timers.push(setTimeout(function () { endIntro(false); }, 3460));
+      return;
+    }
 
     // Scene 2 — 実際に注がれる映像。自動再生が拒否されたら演出ごと畳む。
     if (!video) return endIntro(true);
@@ -128,8 +185,13 @@ export const appJS = (cfg) => `
     try { seen = sessionStorage.getItem('sl-intro') === '1'; } catch (e) {}
     if (location.search.indexOf('intro=1') >= 0) seen = false;
     if (reduced || seen) return endIntro(true);
-    if (document.readyState === 'complete') playIntro();
-    else addEventListener('load', playIntro, { once: true });
+    var go = function () {
+      if (document.readyState === 'complete') playIntro();
+      else addEventListener('load', playIntro, { once: true });
+    };
+    var started = false;
+    var fallback = setTimeout(function () { started = true; go(); }, 2500);
+    glassReady.then(function () { if (!started) { started = true; clearTimeout(fallback); go(); } });
   }
 
   /* ───── 2. 絞り込み ───────────────────────────────────────────── */
