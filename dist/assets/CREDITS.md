@@ -1,11 +1,28 @@
 # 画像・映像の出典
 
-いずれも商用利用可・帰属不要のライセンスだが、出どころは残しておく。
+外部素材はいずれも商用利用可・帰属不要のライセンスだが、出どころは残しておく。
 
 | ファイル | 出典 | 作者 | ライセンス |
 |---|---|---|---|
-| `bar.jpg` | [Unsplash](https://unsplash.com/photos/dimly-lit-bar-interior-with-bottles-on-shelves-1zGxaFuG7LY) | Alex Dev | Unsplash License |
+| `bar.jpg` | 画像生成AIで作成（2026-10-01）。元画像は `design/photos/bar-original.png` | 運営者 | — |
+| `/og.jpg` の背景写真 | 画像生成AIで作成（2026-10-01）。元画像は `design/photos/og-photo.png` | 運営者 | — |
 | `pour.mp4` / `glass-poster.jpg` | [Pexels](https://www.pexels.com/video/pouring-whiskey-in-glass-with-elegant-bokeh-34292842/) | Naresh Babu | Pexels License |
+
+以前の `bar.jpg` は Unsplash の写真（Alex Dev「dimly lit bar interior with bottles on shelves」）だった。
+
+## bar.jpg の作り方
+
+```
+ffmpeg -i design/photos/bar-original.png -q:v 2 -pix_fmt yuvj420p dist/assets/bar.jpg
+```
+
+暗い画像は圧縮を強くすると階調に段が出るので、`-q:v 2` より下げない。
+
+## og.jpg（SNS共有カード）の作り方
+
+原稿は `design/og-image.html`（写真の上に文字を重ねたもの）。`npm run og` で
+Edge か Chrome のヘッドレスで 1200×630 を撮り、`dist/og.jpg` に書き出す。
+文言を変えたらこれを再実行して、続けて `npm run build`。
 
 ## pour.mp4 の作り方
 
@@ -24,7 +41,7 @@ ffmpeg -sseof -0.12 -i pour-cut.mp4 -frames:v 1 -q:v 3 glass-poster.jpg
 
 ## 差し替えるとき
 
-- `bar.jpg` — 暗めで中央から下に焦点があるもの。明るいと見出しが読めない
+- `bar.jpg` — 暗めで、明るいもの（棚・照明）は中央〜右に寄せたもの。左に見出しが乗るので、左が明るいと読めない
 - `pour.mp4` — 縦長（540×766 前後）で、グラスが中央にあり、最後に液が溜まっているもの。
   アスペクト比を変えたら `scripts/lib/view.mjs` の `.glass{aspect-ratio}` も合わせる
 - どちらも**実在ブランドのラベルが写り込んでいないこと**を確認する

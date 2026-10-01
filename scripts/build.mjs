@@ -138,30 +138,43 @@ const esc = s => String(s).replace(/[&<>"']/g, c =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const num = n => n.toLocaleString('ja-JP', { maximumFractionDigits: 1 });
 
-// OG画像は dist/og.png があるときだけ宣言する。存在しない画像を指すと、
+// OG画像は dist/og.jpg（または og.png）があるときだけ宣言する。存在しない画像を指すと、
 // 共有先が空のカードを描いてしまい、画像なしよりかえって悪い。
-// 原稿は design/og-image.html（ブラウザで開いて 1200×630 の枠を書き出す）。
-const hasOgImage = existsSync('dist/og.png');
-// 寸法は決め打ちにせずPNGのヘッダから読む。画面の解像度倍率がかかった書き出しでは
+// 原稿は design/og-image.html、書き出しは node scripts/og.mjs。
+const OG_FILE = ['og.jpg', 'og.png'].find(f => existsSync(`dist/${f}`));
+const hasOgImage = Boolean(OG_FILE);
+const OG_URL = OG_FILE ? `${BASE}/${OG_FILE}` : '';
+// 寸法は決め打ちにせず画像のヘッダから読む。画面の解像度倍率がかかった書き出しでは
 // 1200×630 にならないので、宣言と実物がずれるとスクレイパーが誤った枠で描く。
-function pngSize(file) {
+function imageSize(file) {
   const b = readFileSync(file);
-  if (b.slice(1, 4).toString() !== 'PNG') return null;
-  return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) };
+  if (b.slice(1, 4).toString() === 'PNG') return { w: b.readUInt32BE(16), h: b.readUInt32BE(20), type: 'image/png' };
+  if (b[0] === 0xff && b[1] === 0xd8) {
+    // JPEG はマーカーを順にたどり、寸法の入った SOF（C0〜CF、ただし C4/C8/CC を除く）を探す
+    for (let i = 2; i + 9 < b.length;) {
+      if (b[i] !== 0xff) { i++; continue; }
+      const m = b[i + 1];
+      if (m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc) {
+        return { w: b.readUInt16BE(i + 7), h: b.readUInt16BE(i + 5), type: 'image/jpeg' };
+      }
+      i += 2 + b.readUInt16BE(i + 2);
+    }
+  }
+  return null;
 }
-const ogSize = hasOgImage ? pngSize('dist/og.png') : null;
+const ogSize = OG_FILE ? imageSize(`dist/${OG_FILE}`) : null;
 
 // バーの背景画像の差し替え口。dist/assets/bar.jpg を置けばCSSの地がそれに変わり、
 // なければCSSで作った暖色の光源だけで成立する。画像が無くても崩れないことが条件。
 const BAR_IMAGE = ['bar.jpg', 'bar.webp', 'bar.png'].find(f => existsSync(`dist/assets/${f}`));
 const barStyle = BAR_IMAGE ? `:root{--bar-image:url(/assets/${BAR_IMAGE})}` : '';
 const ogImageTags = ogSize
-  ? `<meta property="og:image" content="${BASE}/og.png">
-<meta property="og:image:type" content="image/png">
+  ? `<meta property="og:image" content="${OG_URL}">
+<meta property="og:image:type" content="${ogSize.type}">
 <meta property="og:image:width" content="${ogSize.w}">
 <meta property="og:image:height" content="${ogSize.h}">
 <meta property="og:image:alt" content="SpiritLens — 純アルコール20gあたりの価格で比べる">
-<meta name="twitter:image" content="${BASE}/og.png">
+<meta name="twitter:image" content="${OG_URL}">
 <meta name="twitter:image:alt" content="SpiritLens — 純アルコール20gあたりの価格で比べる">`
   : '';
 const twitterCard = ogSize ? 'summary_large_image' : 'summary';
@@ -264,7 +277,7 @@ function page({ items, genre, path }) {
         '@type': 'WebPage', '@id': url + '#webpage', url, name: title, description: desc,
         isPartOf: { '@id': BASE + '/#website' }, inLanguage: 'ja',
         datePublished: isoDate, dateModified: isoDate,
-        author: { '@id': BASE + '/#author' }, primaryImageOfPage: hasOgImage ? BASE + '/og.png' : undefined,
+        author: { '@id': BASE + '/#author' }, primaryImageOfPage: hasOgImage ? OG_URL : undefined,
       },
       // このページの本体は記事ではなく調査データそのものなので Dataset で宣言する。
       // Article を名乗ると型と中身が食い違い、かえって信用を落とす。

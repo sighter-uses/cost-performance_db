@@ -9,6 +9,7 @@
     "genres": "node scripts/discover-genres.mjs",
     "fetch": "node scripts/fetch.mjs",
     "build": "node scripts/build.mjs",
+    "og": "node scripts/og.mjs",
     "update": "node scripts/fetch.mjs && node scripts/build.mjs"
   },
   "devDependencies": {
