@@ -228,9 +228,9 @@ export const appJS = (cfg) => `
   }
 
   /* ───── 3. 描画 ───────────────────────────────────────────────── */
-  function shotHTML(i, cls) {
+  function shotHTML(i, alt) {
     if (!i.im) return '<span class="ph">画像なし</span>';
-    return '<img src="' + esc(i.im) + '" alt="" loading="lazy" decoding="async" width="200" height="200"' +
+    return '<img src="' + esc(i.im) + '" alt="' + esc(alt || '') + '" loading="lazy" decoding="async" width="200" height="200"' +
       ' onerror="this.parentNode.innerHTML=\\'<span class=&quot;ph&quot;>画像を読み込めません</span>\\'">';
   }
 
@@ -316,7 +316,8 @@ export const appJS = (cfg) => `
         '</dl>' + (i.c > 0 ? '<div class="bars">' + bar('評価', i.r) + '</div>' : '');
     }
     box.innerHTML =
-      '<div class="panel-shot"><span class="badge">注目の銘柄</span>' + shotHTML(i) + '</div>' +
+      '<button type="button" class="panel-close" id="panelClose" aria-label="詳細を閉じる">×</button>' +
+      '<div class="panel-shot"><span class="badge">注目の銘柄</span>' + shotHTML(i, i.n) + '</div>' +
       '<div class="panel-body"><h2>' + esc(i.n) + '</h2>' +
       '<p class="sub">' + esc(i.g) + ' ・ ' + i.a + '% ・ ' + i.v.toLocaleString('ja-JP') + 'ml</p>' +
       (i.c > 0 ? '<span class="rate"><i>★</i> ' + i.r.toFixed(1) + ' <span>(' + i.c.toLocaleString('ja-JP') + ')</span></span>' : '') +
@@ -344,7 +345,7 @@ export const appJS = (cfg) => `
     $('trayCount').textContent = st.picks.length + ' / ' + MAX + ' 銘柄';
     $('trayThumbs').innerHTML = st.picks.map(function (k) {
       var i = byKey[k];
-      return '<span>' + (i ? shotHTML(i) : '') + '</span>';
+      return '<span>' + (i ? shotHTML(i, i.n) : '') + '</span>';
     }).join('');
   }
 
@@ -363,7 +364,7 @@ export const appJS = (cfg) => `
       '<button type="button" class="sortsel" id="cmpClose">閉じる</button></div>' +
       '<div class="cmp-wrap"><div class="cmp" style="grid-template-columns:120px repeat(' + list.length + ',minmax(0,1fr))">' +
       '<div></div>' + list.map(function (i) {
-        return '<div class="h"><div class="shot" style="width:100%;height:120px;margin-bottom:10px">' + shotHTML(i) + '</div>' +
+        return '<div class="h"><div class="shot cmp-shot">' + shotHTML(i, i.n) + '</div>' +
           '<span class="nm">' + esc(i.n) + '</span><span class="sub">' + esc(i.g) + '</span></div>';
       }).join('') +
       line('実質 ¥/20g', function (i) { return '<div class="cell big' + (eff(i) === bestY ? ' best' : '') + '">¥' + num(eff(i)) + '</div>'; }) +
@@ -403,14 +404,37 @@ export const appJS = (cfg) => `
     document.querySelector('.work').scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 
+  var narrow = matchMedia('(max-width:1240px)');
+  var sheetReturn = null;
+  function openSheet(from) {
+    if (!narrow.matches) return;
+    var p = $('panel'), v = $('sheetVeil');
+    sheetReturn = from || null;
+    p.classList.add('open');
+    if (v) v.hidden = false;
+    document.body.classList.add('sheet-open');
+    var c = $('panelClose');
+    if (c) c.focus({ preventScroll: true });
+  }
+  function closeSheet() {
+    var p = $('panel'), v = $('sheetVeil');
+    if (!p.classList.contains('open')) return;
+    p.classList.remove('open');
+    if (v) v.hidden = true;
+    document.body.classList.remove('sheet-open');
+    if (sheetReturn) sheetReturn.focus({ preventScroll: true });
+  }
+  narrow.addEventListener('change', closeSheet);
+  addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSheet(); });
+
   $('rows').addEventListener('click', function (e) {
     var row = e.target.closest('.row');
-    if (row) { st.sel = row.dataset.k; render(); }
+    if (row) { st.sel = row.dataset.k; render(); openSheet(row); }
   });
   $('rows').addEventListener('keydown', function (e) {
     if (e.key !== 'Enter' && e.key !== ' ') return;
     var row = e.target.closest('.row');
-    if (row) { e.preventDefault(); st.sel = row.dataset.k; render(); }
+    if (row) { e.preventDefault(); st.sel = row.dataset.k; render(); openSheet(row); }
   });
   document.addEventListener('click', function (e) {
     var add = e.target.closest('[data-add]');
@@ -418,7 +442,33 @@ export const appJS = (cfg) => `
     var tab = e.target.closest('[data-tab]');
     if (tab) { st.tab = tab.dataset.tab; renderPanel(); return; }
     if (e.target.closest('#cmpClose')) { $('compare').hidden = true; return; }
+    if (e.target.closest('#panelClose') || e.target.closest('#sheetVeil')) { closeSheet(); return; }
+    var nav = e.target.closest('[data-nav]');
+    if (nav) {
+      e.preventDefault();
+      if (nav.dataset.nav === 'search') {
+        scrollTo({ top: 0, behavior: 'smooth' });
+        var hq2 = $('heroQ');
+        if (hq2) hq2.focus({ preventScroll: true });
+      } else if (nav.dataset.nav === 'compare') {
+        if (st.picks.length) { closeSheet(); renderCompare(); }
+        else {
+          document.querySelector('.work').scrollIntoView({ behavior: 'smooth', block: 'start' });
+          hint('比較したい銘柄を一覧から選び、詳細の「比較リストに追加」を押してください（最大' + MAX + 'つ）。');
+        }
+      }
+    }
   });
+
+  var hintTimer = 0;
+  function hint(text) {
+    var h = $('hint');
+    if (!h) return;
+    h.textContent = text;
+    h.hidden = false;
+    clearTimeout(hintTimer);
+    hintTimer = setTimeout(function () { h.hidden = true; }, 5200);
+  }
 
   document.querySelectorAll('[data-genre]').forEach(function (el) {
     el.addEventListener('change', function () {

@@ -13,7 +13,7 @@
 export const FONTS =
   '<link rel="preconnect" href="https://fonts.googleapis.com">\n' +
   '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n' +
-  '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Murecho:wght@300..800&display=swap">';
+  '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Murecho:wght@300..800&family=Shippori+Mincho+B1:wght@500;700&display=swap">';
 
 /**
  * グラス。DOM上に1つだけ置き、オープニングとヒーローで共有する。
@@ -54,10 +54,14 @@ export const STYLES = `
   --line:rgba(226,198,150,.13); --line2:rgba(226,198,150,.26);
   --ink:#f4eee2; --sub:#ab9f8c; --faint:#7e7364;
   --gold:#e3b671; --gold2:#c8933f; --gold-wash:rgba(227,182,113,.10);
-  --good:#8fbfa4;
+  /* 強調色は金の1系統だけ。以前は緑とサーモンのタグが混ざり、3色に割れていた */
   --f-disp:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --f-mincho:'Shippori Mincho B1','Hiragino Mincho ProN','Yu Mincho',serif;
   --f-body:Murecho,'Hiragino Sans','Yu Gothic',system-ui,sans-serif;
-  --shell:1480px; --r:3px;
+  --shell:1480px;
+  /* 角丸は入れ物ほど大きく、中身ほど小さく。全部 2〜3px の一律だと平板に見える */
+  --r-lg:12px; --r:9px; --r-sm:6px; --r-xs:4px;
+  --ease:cubic-bezier(.2,.7,.2,1);
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -69,6 +73,20 @@ a{color:var(--gold);text-decoration:none}
 a:hover{color:#f2cd93}
 button{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+/* 押せる物はすべて、色の変化に時間を持たせ、押した瞬間に1px沈ませる。
+   transition: all は使わない —— レイアウトに関わる性質まで動いてしまう */
+button,a,.sortsel,.opt{transition:color 180ms var(--ease),background-color 180ms var(--ease),
+  border-color 180ms var(--ease),transform 120ms var(--ease),box-shadow 180ms var(--ease)}
+button:active,.buy:active,.ghost:active{transform:translateY(1px)}
+h1,h2,h3{text-wrap:balance}
+p,dd,.nm{text-wrap:pretty}
+/* 面に肌理を足す。ヒーローより下が真っ平らで、写真の面と質感が切れていた */
+body::after{content:'';position:fixed;inset:0;z-index:300;pointer-events:none;opacity:.05;
+  mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E")}
+.skip{position:absolute;left:12px;top:-60px;z-index:400;padding:10px 16px;background:var(--gold);
+  color:#16110a;border-radius:var(--r-sm);font-size:13px;font-weight:700}
+.skip:focus{top:12px;color:#16110a}
 img{max-width:100%}
 .sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
   clip:rect(0 0 0 0);white-space:nowrap;border:0}
@@ -126,24 +144,25 @@ img{max-width:100%}
      見出しが画面の左端に貼り付く。 */
   padding-top:52px}
 .hero-copy{max-width:36rem}
-.hero h1{margin:0 0 14px;font-size:clamp(27px,3.2vw,42px);font-weight:300;line-height:1.34;letter-spacing:.01em;
+.hero h1{margin:0 0 16px;font-family:var(--f-mincho);font-size:clamp(28px,3.4vw,46px);font-weight:500;
+  line-height:1.38;letter-spacing:.03em;
   /* 「ウイスキーの一/杯に、」のように語の途中で割れるのを防ぐ */
   word-break:keep-all;overflow-wrap:break-word}
 .hero h1 em{font-style:normal;font-weight:700}
 .hero p{margin:0 0 26px;font-size:14.5px;line-height:1.95;color:var(--sub)}
 .seek{display:flex;align-items:center;gap:12px;padding:0 6px 0 16px;background:rgba(18,16,14,.86);
-  border:1px solid var(--line2);border-radius:var(--r);max-width:34rem}
+  border:1px solid var(--line2);border-radius:var(--r-lg);max-width:34rem}
 .seek input{flex:1;min-width:0;padding:14px 0;background:none;border:0;color:var(--ink);
   font-family:var(--f-body);font-size:14.5px}
 .seek input::placeholder{color:var(--faint)}
 .seek input:focus{outline:none}
 .seek button{width:42px;height:34px;display:grid;place-items:center;background:var(--gold);
-  border:0;border-radius:2px;color:#17120b;cursor:pointer}
+  border:0;border-radius:var(--r);color:#17120b;cursor:pointer}
 .seek button:hover{background:#f0c581}
-.moods{background:rgba(16,14,12,.72);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.moods{background:rgba(16,14,12,.72);border:1px solid var(--line);border-radius:var(--r-lg);padding:18px}
 .moods h2{margin:0 0 12px;font-size:11.5px;font-weight:400;letter-spacing:.13em;color:var(--sub)}
 .moods button{display:flex;align-items:center;gap:11px;width:100%;padding:9px 8px;background:none;
-  border:0;border-radius:2px;color:var(--ink);font-size:13px;text-align:left;cursor:pointer}
+  border:0;border-radius:var(--r-sm);color:var(--ink);font-size:13px;text-align:left;cursor:pointer}
 .moods button:hover{background:var(--gold-wash)}
 .moods svg{width:15px;height:15px;color:var(--gold);flex:none}
 
@@ -204,7 +223,7 @@ html.intro-done .veiled,html:not(.intro-on) .veiled{opacity:1;transition:opacity
 /* ── 本体レイアウト: 絞り込み / 一覧 / 詳細 ───────────────────── */
 .work{display:grid;grid-template-columns:232px minmax(0,1fr) 336px;gap:22px;
   align-items:start;padding:26px 0 72px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-lg)}
 .side{position:sticky;top:82px;padding:18px}
 .side h2{margin:0;font-size:12px;font-weight:500;letter-spacing:.1em;color:var(--sub)}
 .side-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:18px}
@@ -226,7 +245,7 @@ html.intro-done .veiled,html:not(.intro-on) .veiled{opacity:1;transition:opacity
 /* 一覧 */
 .list-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
   padding:0 2px 14px;flex-wrap:wrap}
-.list-head h2{margin:0 0 4px;font-size:19px;font-weight:600}
+.list-head h2{margin:0 0 4px;font-family:var(--f-mincho);font-size:21px;font-weight:700;letter-spacing:.02em}
 .list-head p{margin:0;font-size:12.5px;color:var(--sub)}
 .list-tools{display:flex;align-items:center;gap:10px;flex-shrink:0}
 .count{font-size:12.5px;color:var(--sub)}
@@ -240,14 +259,15 @@ html.intro-done .veiled,html:not(.intro-on) .veiled{opacity:1;transition:opacity
 .rows{display:flex;flex-direction:column;gap:9px;list-style:none;margin:0;padding:0}
 .row{display:grid;grid-template-columns:auto 104px minmax(0,1fr) 128px 148px 26px;gap:16px;
   align-items:center;padding:14px 16px;background:var(--panel);border:1px solid var(--line);
-  border-radius:var(--r);cursor:pointer;transition:border-color 140ms linear,background 140ms linear}
+  border-radius:var(--r);cursor:pointer;position:relative}
 .row:hover{border-color:var(--line2);background:var(--panel2)}
 .row.on{border-color:var(--gold2);background:var(--gold-wash)}
+.row.on::before{content:'';position:absolute;left:-1px;top:14px;bottom:14px;width:3px;border-radius:0 3px 3px 0;background:var(--gold)}
 .rank{width:20px;height:20px;display:grid;place-items:center;background:var(--raise);
-  border-radius:2px;font-size:11px;color:var(--sub);font-family:var(--f-disp);font-weight:600}
+  border-radius:var(--r-xs);font-size:11px;color:var(--sub);font-family:var(--f-disp);font-weight:600}
 .row:nth-child(-n+3) .rank{background:var(--gold);color:#16110a}
 .shot{width:104px;height:104px;display:grid;place-items:center;background:#0e0c0a;
-  border:1px solid var(--line);border-radius:2px;overflow:hidden}
+  border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden}
 .shot img{width:100%;height:100%;object-fit:contain;mix-blend-mode:normal}
 .shot .ph{font-size:10px;color:var(--faint);text-align:center;padding:6px;line-height:1.5}
 .nm{font-size:14px;font-weight:500;line-height:1.55;margin:0 0 5px;
@@ -257,12 +277,14 @@ html.intro-done .veiled,html:not(.intro-on) .veiled{opacity:1;transition:opacity
 .rate i{font-style:normal}
 .rate span{color:var(--sub)}
 .tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
-.tag{padding:2px 7px;border-radius:2px;font-size:10.5px;border:1px solid var(--line2);color:var(--sub)}
-.tag.hot{color:#e9a38b;border-color:rgba(233,163,139,.4)}
-.tag.val{color:var(--good);border-color:rgba(143,191,164,.4)}
+.tag{padding:2px 7px;border-radius:var(--r-xs);font-size:10.5px;border:1px solid var(--line2);color:var(--sub)}
+/* 色相ではなく「塗りか線か」で区別する。強調色を増やさないため */
+.tag.hot{color:#16110a;background:var(--gold);border-color:var(--gold);font-weight:700}
+.tag.val{color:var(--gold);border-color:rgba(227,182,113,.5)}
 .spec{font-size:11.5px;color:var(--sub);line-height:1.9}
 .spec b{display:block;color:var(--faint);font-size:10.5px;font-weight:400}
 .money{text-align:right}
+.money .yen,.money .per i,.cmp .cell.big,.rank{font-variant-numeric:lining-nums tabular-nums}
 .money .yen{font-family:var(--f-disp);font-size:22px;font-weight:600;line-height:1.2}
 .money .per{margin-top:7px;padding-top:7px;border-top:1px solid var(--line)}
 .money .per b{display:block;font-size:10px;color:var(--faint);font-weight:400;letter-spacing:.04em}
@@ -289,9 +311,9 @@ html.intro-done .veiled,html:not(.intro-on) .veiled{opacity:1;transition:opacity
   border-bottom:1px solid var(--line)}
 .panel-shot img{max-height:214px;width:auto;object-fit:contain}
 .badge{position:absolute;top:12px;left:12px;padding:4px 10px;background:var(--gold);color:#16110a;
-  border-radius:2px;font-size:10.5px;font-weight:700}
+  border-radius:var(--r-xs);font-size:10.5px;font-weight:700}
 .panel-body{padding:18px}
-.panel h2{margin:0 0 5px;font-size:17px;font-weight:600;line-height:1.45}
+.panel h2{margin:0 0 5px;font-family:var(--f-mincho);font-size:18px;font-weight:700;line-height:1.5}
 .panel .sub{margin-bottom:10px}
 .tabs{display:flex;gap:2px;margin:16px 0 14px;border-bottom:1px solid var(--line)}
 .tabs button{padding:8px 13px;background:none;border:0;border-bottom:2px solid transparent;
@@ -307,7 +329,8 @@ html.intro-done .veiled,html:not(.intro-on) .veiled{opacity:1;transition:opacity
 .bars .m i{display:block;height:100%;background:var(--gold)}
 .bars .v{text-align:right;color:var(--sub)}
 .buy{display:block;margin-top:16px;padding:13px;background:var(--gold);color:#16110a;
-  border:0;border-radius:var(--r);font-size:13.5px;font-weight:700;text-align:center;cursor:pointer;width:100%}
+  border:0;border-radius:var(--r);font-size:13.5px;font-weight:700;text-align:center;cursor:pointer;width:100%;
+  box-shadow:0 1px 0 rgba(255,236,200,.35) inset,0 8px 20px -10px rgba(227,150,60,.6)}
 .buy:hover{background:#f0c581;color:#16110a}
 .ghost{display:block;width:100%;margin-top:8px;padding:11px;background:none;border:1px solid var(--line2);
   border-radius:var(--r);color:var(--sub);font-size:12.5px;cursor:pointer;text-align:center}
@@ -323,7 +346,7 @@ html.intro-done .veiled,html:not(.intro-on) .veiled{opacity:1;transition:opacity
 .tray-thumbs img{width:100%;height:100%;object-fit:contain}
 .cmp-wrap{overflow-x:auto;margin-top:14px}
 .cmp{min-width:44rem;display:grid;gap:9px}
-.cmp .h{padding:13px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r)}
+.cmp .h{padding:13px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r-lg)}
 .cmp .cell{padding:10px 13px;font-size:13px;color:var(--sub)}
 .cmp .cell.big{font-family:var(--f-disp);font-size:24px;font-weight:600;color:var(--ink)}
 .cmp .cell.best{color:var(--gold);background:var(--gold-wash);border-radius:2px}
@@ -332,7 +355,7 @@ html.intro-done .veiled,html:not(.intro-on) .veiled{opacity:1;transition:opacity
 /* ── 出典・注記 ─────────────────────────────────────────────── */
 .pr{padding:8px 0;font-size:11px;letter-spacing:.06em;color:var(--faint);text-align:center;
   border-bottom:1px solid var(--line);background:#060505}
-.survey{margin:32px 0 0;padding:20px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r)}
+.survey{margin:32px 0 0;padding:22px 24px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r-lg)}
 .survey h2,.faq h2{margin:0 0 14px;font-size:11.5px;font-weight:400;letter-spacing:.13em;color:var(--gold2)}
 .survey dl{margin:0;display:grid;grid-template-columns:max-content 1fr;gap:6px 18px;font-size:12.5px;line-height:1.8}
 .survey dt{color:var(--faint);white-space:nowrap}
@@ -341,7 +364,7 @@ html.intro-done .veiled,html:not(.intro-on) .veiled{opacity:1;transition:opacity
 .faq dt{font-size:14px;font-weight:600;margin-top:18px;line-height:1.6}
 .faq dd{margin:6px 0 0;font-size:12.5px;line-height:1.95;color:var(--sub)}
 .faq dl{margin:0}
-foot,footer{display:block;margin-top:40px;padding:26px 0 48px;border-top:1px solid var(--line);
+footer{display:block;margin-top:40px;padding:26px 0 48px;border-top:1px solid var(--line);
   font-size:12.5px;color:var(--sub);line-height:1.95}
 footer h2{margin:0 0 10px;font-size:11.5px;font-weight:400;letter-spacing:.13em;color:var(--gold2)}
 footer dl{margin:0 0 18px;display:grid;grid-template-columns:max-content 1fr;gap:5px 18px}
@@ -349,6 +372,18 @@ footer dt{color:var(--faint)}
 footer dd{margin:0}
 .legal{margin-top:18px;padding:12px 16px;border-left:2px solid var(--gold2);color:var(--faint);font-size:12px}
 .legal b{color:var(--ink)}
+
+.seek-icon{flex:none}
+.opt-sep{margin-top:8px}
+.side-note{margin:0;font-size:11px;color:var(--faint);line-height:1.8}
+.foot-nav{margin-top:20px;display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px}
+.tray-left{display:flex;align-items:center;gap:14px}
+.tray-acts{display:flex;gap:8px}
+.tray-acts .ghost,.tray-acts .buy{margin:0;width:auto;padding:11px 20px}
+/* 比較が空のときの案内。ナビの「比較」が空振りしないように */
+.hint{position:fixed;left:50%;bottom:24px;z-index:60;transform:translateX(-50%);max-width:min(92vw,30rem);
+  margin:0;padding:12px 18px;background:var(--panel2);border:1px solid var(--line2);border-radius:var(--r);
+  color:var(--ink);font-size:13px;box-shadow:0 14px 34px -12px rgba(0,0,0,.7)}
 
 /* 年齢確認 */
 #gate{position:fixed;inset:0;z-index:200;background:var(--bg);display:grid;place-items:center;padding:24px}
@@ -360,10 +395,22 @@ footer dd{margin:0}
   font-size:12px;text-decoration:underline;cursor:pointer}
 
 /* ── 画面幅 ─────────────────────────────────────────────────── */
+.panel-close{display:none}
+.cmp-shot{width:100%;height:120px;margin-bottom:10px}
+.sheet-veil{position:fixed;inset:0;z-index:65;background:rgba(6,5,5,.6)}
 @media (max-width:1240px){
   .work{grid-template-columns:208px minmax(0,1fr)}
-  .panel{display:none}
+  /* 狭い画面では詳細を下からせり上げる。消してしまうと「比較リストに追加」に届かない */
+  .panel{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:70;max-height:82vh;overflow:auto;
+    border-radius:var(--r-lg) var(--r-lg) 0 0;transform:translateY(105%);
+    transition:transform 300ms var(--ease);box-shadow:0 -18px 40px -16px rgba(0,0,0,.8)}
+  .panel.open{transform:none}
+  .panel-close{display:grid;place-items:center;position:absolute;top:10px;right:10px;z-index:2;
+    width:36px;height:36px;border-radius:999px;border:1px solid var(--line2);background:rgba(16,14,12,.9);
+    color:var(--ink);font-size:20px;line-height:1;cursor:pointer}
+  body.sheet-open{overflow:hidden}
 }
+@media (prefers-reduced-motion:reduce){ .panel{transition:none} }
 @media (max-width:1080px){
   /* 3列に収まらなくなる幅。気分パネルを見出しの下へ回し、グラスは右に残す。 */
   .hero-in{grid-template-columns:minmax(0,1fr) minmax(190px,240px);gap:28px}

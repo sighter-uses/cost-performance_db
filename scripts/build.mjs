@@ -177,44 +177,10 @@ function stats(list) {
   };
 }
 
-const rosette = (stroke, rotations) => rotations.map(deg =>
-  `<ellipse pathLength="1" cx="400" cy="400" rx="326" ry="115" transform="rotate(${deg} 400 400)"/>`
-).join('') + `<circle pathLength="1" cx="400" cy="400" r="238" stroke="${stroke}"/>` +
-  `<circle pathLength="1" cx="400" cy="400" r="158" stroke="${stroke}"/>`;
-
-/**
- * 一覧の1行。クライアント側の描画と同じ形にしておくこと —— 食い違うと
- * 読み込み直後に内容が入れ替わってちらつく。
- */
-function rowHTML(i, idx, logLo, logSpan) {
-  const rate = i.c > 0
-    ? `<span class="rate">★ ${i.r.toFixed(2)} <span class="norate">${i.c}件</span></span>`
-    : '<span class="norate">評価なし</span>';
-  const w = Math.max(1.5, Math.min(100, ((Math.log(i.y) - logLo) / logSpan) * 100));
-  return `<li class="row"><div class="body">` +
-    `<span class="nm"><a href="${esc(i.u)}" target="_blank" rel="nofollow sponsored noopener" title="${esc(i.f)}">${esc(i.n)}</a></span>` +
-    `<span class="meta">${rate}<span>${i.a}度</span>` +
-    `<span>${i.v.toLocaleString()}ml${i.s > 1 ? ` × ${i.s}本` : ''}</span>` +
-    `<span>純AL ${num(i.w)}g</span><span>${i.p.toLocaleString()}円</span>` +
-    `<span class="tag">${esc(i.g)}</span>` +
-    (i.pt > 1 ? `<span class="badge pt">ポイント${i.pt}倍</span>` : '') +
-    (i.sp ? '<span class="badge sp">送料別</span>' : '') +
-    `</span></div>` +
-    `<div class="price"><b>${num(i.y)}</b><span>円 / 20g</span>` +
-    (i.pt > 1 ? `<div class="list-price">定価 ${num(i.y)}円 · ${i.pt}%還元</div>` : '') +
-    `</div>` +
-    `<button type="button" class="pick" data-k="${esc(i.n + '|' + i.p)}" aria-pressed="false">比較に追加</button>` +
-    `<span class="scale"><span style="width:${w.toFixed(1)}%"></span></span></li>`;
-}
-
 function page({ items, genre, path }) {
   const st = stats(items);
   const home = items.filter(i => i.v <= HOME_SIZE_ML).sort((a, b) => a.y - b.y);
   const ssr = home.slice(0, SSR_ROWS);
-  const ys = home.map(i => i.y).sort((a, b) => a - b);
-  const logLo = Math.log(Math.max(ys[0] ?? 1, 1));
-  const logHi = Math.log(Math.max(ys[Math.min(ys.length - 1, Math.floor(ys.length * 0.95))] ?? 2, 2));
-  const logSpan = Math.max(logHi - logLo, 0.01);
 
   const url = BASE + path;
   // 検索面の語は実測に合わせる（content/KEYWORDS.md）。
@@ -363,7 +329,7 @@ function page({ items, genre, path }) {
     `<span class="chev" aria-hidden="true">›</span></li>`;
 
   const mood = (id, label, path) =>
-    `<button type="button" data-mood="${id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">${path}</svg>${label}</button>`;
+    `<button type="button" data-mood="${id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">${path}</svg>${label}</button>`;
 
   return `<!doctype html>
 <html lang="ja">
@@ -372,6 +338,7 @@ function page({ items, genre, path }) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0a0908">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 ${IMPORT_MAP}
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(desc)}">
@@ -399,6 +366,7 @@ if(!seen&&!matchMedia('(prefers-reduced-motion: reduce)').matches)c='intro-on';
 <style>${STYLES}${barStyle}</style>
 </head>
 <body>
+<a class="skip" href="#work">本文へスキップ</a>
 
 <p class="pr">PR — 本ページは楽天アフィリエイトプログラムを利用した広告を含みます</p>
 
@@ -408,19 +376,19 @@ if(!seen&&!matchMedia('(prefers-reduced-motion: reduce)').matches)c='intro-on';
       <svg viewBox="0 0 40 50" fill="none" aria-hidden="true">
         <path d="M9 5h22l-2.5 17a8.5 8.5 0 0 1-17 0L9 5Z" stroke="#e3b671" stroke-width="2.2" stroke-linejoin="round"></path>
         <path d="M11.6 14h16.8" stroke="#c8933f" stroke-width="2"></path>
-        <path d="M20 39v6M13 45h14" stroke="#e3b671" stroke-width="2.2" stroke-linecap="round"></path>
+        <path d="M20 30.5V45M13 45h14" stroke="#e3b671" stroke-width="2.2" stroke-linecap="round"></path>
       </svg>
       <span><b>SpiritLens</b><span>Better Spirits, Better Moments.</span></span>
     </a>
     <nav class="nav" aria-label="主要">
       <a href="/"${path === '/' ? ' aria-current="page"' : ''}>ホーム</a>
-      <a href="#work">検索</a>
+      <a href="#heroQ" data-nav="search">検索</a>
       <a href="#work">ランキング</a>
-      <a href="#compare">比較</a>
+      <a href="#work" data-nav="compare">比較</a>
     </nav>
     <div class="top-act">
       <button type="button" class="icon-btn" aria-label="検索へ移動" onclick="document.getElementById('q').focus()">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4.3-4.3"></path></svg>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4.3-4.3"></path></svg>
       </button>
     </div>
   </div>
@@ -435,11 +403,11 @@ if(!seen&&!matchMedia('(prefers-reduced-motion: reduce)').matches)c='intro-on';
       <h1>${genre ? `${esc(genre.name)}の一杯に、<br><em>もっと納得を。</em>` : 'その一杯に、<br><em>もっと納得を。</em>'}</h1>
       <p>${esc(lede)}</p>
       <form class="seek" id="heroForm" role="search">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#7e7364" stroke-width="1.8" aria-hidden="true" style="flex:none"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4.3-4.3"></path></svg>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#7e7364" stroke-width="1.7" aria-hidden="true" class="seek-icon"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4.3-4.3"></path></svg>
         <label class="sr" for="heroQ">銘柄名・ブランド名・種類などで検索</label>
         <input type="search" id="heroQ" placeholder="銘柄名・ブランド名・種類などで検索…" autocomplete="off">
         <button type="submit" aria-label="検索する">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
         </button>
       </form>
     </div>
@@ -463,7 +431,7 @@ if(!seen&&!matchMedia('(prefers-reduced-motion: reduce)').matches)c='intro-on';
       <div class="grp">
         <h3>種類</h3>
         ${counts.map(({ g, n }) => `<label class="opt"><input type="checkbox" data-genre="${esc(g.name)}"${genre && genre.slug === g.slug ? ' checked' : ''}>${esc(g.name)}<span class="n">${n.toLocaleString('ja-JP')}</span></label>`).join('\n        ')}
-        <label class="opt" style="margin-top:8px"><input type="checkbox" id="homeOnly" checked>家庭用サイズ（1本1.8L以下）</label>
+        <label class="opt opt-sep"><input type="checkbox" id="homeOnly" checked>家庭用サイズ（1本1.8L以下）</label>
       </div>
 
       <div class="grp">
@@ -492,7 +460,7 @@ if(!seen&&!matchMedia('(prefers-reduced-motion: reduce)').matches)c='intro-on';
         <div class="rng-val"><span>実質価格に反映</span><span id="rateVal">1%</span></div>
       </div>
 
-      <p style="margin:0;font-size:11px;color:var(--faint);line-height:1.8">産地とブランドでの絞り込みは用意していません。楽天のAPIが構造化された項目として返さず、商品名からの推定は誤りが出るためです。</p>
+      <p class="side-note">産地とブランドでの絞り込みは用意していません。楽天のAPIが構造化された項目として返さず、商品名からの推定は誤りが出るためです。</p>
     </aside>
 
     <main>
@@ -513,10 +481,10 @@ if(!seen&&!matchMedia('(prefers-reduced-motion: reduce)').matches)c='intro-on';
           </select>
           <div class="seg" role="group" aria-label="表示形式">
             <button type="button" data-view="grid" aria-pressed="false" aria-label="カードで表示">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>
             </button>
             <button type="button" data-view="list" aria-pressed="true" aria-label="一覧で表示">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
             </button>
           </div>
         </div>
@@ -569,22 +537,26 @@ if(!seen&&!matchMedia('(prefers-reduced-motion: reduce)').matches)c='intro-on';
       妊娠中や授乳期の飲酒は胎児・乳児の発育に影響するおそれがあります。飲酒運転は法律で禁止されています。
       このサイトは20歳以上の方を対象としており、過度な飲酒を勧めるものではありません。</p>
 
-    <nav aria-label="種別" style="margin-top:20px;display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px">
+    <nav class="foot-nav" aria-label="種別">
       <a href="/">すべての蒸留酒</a>
+      <a href="/privacy/">プライバシーポリシー</a>
       ${GENRES.map(g => `<a href="/${g.slug}/">${esc(g.name)}</a>`).join('\n      ')}
     </nav>
   </footer>
 </div>
 
+<p class="hint" id="hint" role="status" aria-live="polite" hidden></p>
+<div class="sheet-veil" id="sheetVeil" hidden></div>
+
 <div class="tray" id="tray" hidden>
   <div class="shell tray-in">
-    <div style="display:flex;align-items:center;gap:14px">
+    <div class="tray-left">
       <span class="count" id="trayCount"></span>
       <div class="tray-thumbs" id="trayThumbs"></div>
     </div>
-    <div style="display:flex;gap:8px">
-      <button type="button" class="ghost" id="trayClear" style="margin:0;width:auto;padding:11px 18px">解除</button>
-      <button type="button" class="buy" id="trayOpen" style="margin:0;width:auto;padding:11px 24px">比較する</button>
+    <div class="tray-acts">
+      <button type="button" class="ghost" id="trayClear">解除</button>
+      <button type="button" class="buy" id="trayOpen">比較する</button>
     </div>
   </div>
 </div>
@@ -720,6 +692,95 @@ figcaption b{color:#f4eee2;margin-right:8px}
 </body>
 </html>
 `);
+
+// ── 本体以外のページ（404・プライバシーポリシー）──────────────────────
+// 本体と同じ見た目の殻だけを使う。一覧や演出のスクリプトは読み込まない。
+function simplePage({ title, body, noindex = false }) {
+  return `<!doctype html>
+<html lang="ja" class="intro-done">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0908">
+${noindex ? '<meta name="robots" content="noindex">' : ''}
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>${esc(title)} | SpiritLens</title>
+${FONTS}
+<style>${STYLES}
+.doc{max-width:44rem;padding:56px 0 72px}
+.doc h1{margin:0 0 18px;font-family:var(--f-mincho);font-size:clamp(26px,3vw,36px);font-weight:700;letter-spacing:.03em}
+.doc h2{margin:34px 0 10px;font-family:var(--f-mincho);font-size:18px;font-weight:700}
+.doc p,.doc li{color:var(--sub);font-size:14px;line-height:2}
+.doc ul{padding-left:1.2em}
+.doc .lead{font-size:15px;color:var(--ink)}
+.doc .back{display:inline-block;margin-top:28px}
+</style>
+</head>
+<body>
+<a class="skip" href="#doc">本文へスキップ</a>
+<header class="top">
+  <div class="shell top-in">
+    <a class="brand" href="/">
+      <svg viewBox="0 0 40 50" fill="none" aria-hidden="true">
+        <path d="M9 5h22l-2.5 17a8.5 8.5 0 0 1-17 0L9 5Z" stroke="#e3b671" stroke-width="2.2" stroke-linejoin="round"></path>
+        <path d="M11.6 14h16.8" stroke="#c8933f" stroke-width="2"></path>
+        <path d="M20 30.5V45M13 45h14" stroke="#e3b671" stroke-width="2.2" stroke-linecap="round"></path>
+      </svg>
+      <span><b>SpiritLens</b><span>Better Spirits, Better Moments.</span></span>
+    </a>
+  </div>
+</header>
+<main class="shell doc" id="doc">
+${body}
+</main>
+</body>
+</html>
+`;
+}
+
+write('dist/404.html', simplePage({
+  title: 'ページが見つかりません',
+  noindex: true,
+  body: `<h1>お探しのページは見つかりませんでした</h1>
+<p class="lead">アドレスが変わったか、削除された可能性があります。</p>
+<p>蒸留酒の一覧からお探しください。種別ごとのページもあります。</p>
+<p>${['<a href="/">すべての蒸留酒</a>'].concat(GENRES.map(g => `<a href="/${g.slug}/">${esc(g.name)}</a>`)).join('　')}</p>
+<a class="buy back" href="/">ホームへ戻る</a>`,
+}));
+
+write('dist/privacy/index.html', simplePage({
+  title: 'プライバシーポリシー',
+  body: `<h1>プライバシーポリシー</h1>
+<p class="lead">SpiritLens（以下「当サイト」）は、個人の Drunker が運営しています。当サイトが扱う情報と、その扱い方を書きます。</p>
+
+<h2>アクセス解析</h2>
+<p>アクセス数の把握に Cloudflare Web Analytics を使っています。Cookie も端末の識別も使わず、個人を特定する情報は収集していません。</p>
+
+<h2>お使いの端末に保存するもの</h2>
+<p>次の情報を、お使いのブラウザの中だけに保存します。当サイトのサーバーには送られません。</p>
+<ul>
+  <li>年齢確認への回答</li>
+  <li>一覧の表示形式、入力したポイント還元率、比較リストに入れた銘柄</li>
+  <li>オープニング演出を見たかどうか（ブラウザを閉じると消えます）</li>
+</ul>
+<p>ブラウザの設定からサイトデータを消去すると、すべて消えます。</p>
+
+<h2>アフィリエイト</h2>
+<p>当サイトは楽天アフィリエイトプログラムに参加しています。商品のリンクから楽天市場へ移動すると、成果の計測のために楽天グループが Cookie 等を使用することがあります。詳しくは<a href="https://privacy.rakuten.co.jp/" rel="noopener" target="_blank">楽天グループのプライバシーポリシー</a>をご覧ください。</p>
+
+<h2>外部から読み込むもの</h2>
+<ul>
+  <li>書体（Google Fonts）</li>
+  <li>3D版のグラスを選んだときのみ、描画ライブラリ（jsDelivr 経由の Three.js）</li>
+</ul>
+
+<h2>お問い合わせ</h2>
+<p><a href="${AUTHOR.note}" rel="noopener" target="_blank">note</a> のコメント、または <a href="${AUTHOR.repo}" rel="noopener" target="_blank">GitHub</a> の Issue からご連絡ください。</p>
+
+<p>制定日: 2026年10月1日</p>
+<a class="ghost back" href="/">ホームへ戻る</a>`,
+}));
 
 console.log(`\n合計 ${pages.length} ページ / ${(total / 1024).toFixed(0)} KB、sitemap.xml と robots.txt を生成`);
 console.log('秘密鍵の混入チェック: 通過');
