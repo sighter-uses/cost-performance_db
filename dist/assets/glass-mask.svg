@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 766" width="540" height="766">
+  <!--
+    pour.mp4（540×766）の背景を落とすための型。CSS の mask-image で映像に掛ける。
+    白＝見える、透明＝消える。カメラが固定でグラスが動かないので、1枚の型で全フレームに効く。
+
+    3つの領域に分けてある:
+      - グラスの外形（縁・壁・液体・脚）……不透明
+      - 空の上半分の内側……………………上ほど薄い。ガラス越しに映像の玉ボケが透けて
+                                          「背景が残っている」ように見えるのを防ぐ
+      - 注ぎの筋………………………………縁より上。横方向と上端をぼかす
+
+    輪郭は映像の4時点（0.1/1.2/2.4/3.5秒）に重ねて合わせた。映像を差し替えたら測り直すこと。
+  -->
+  <defs>
+    <filter id="soft" x="-5%" y="-5%" width="110%" height="110%">
+      <feGaussianBlur stdDeviation="1.6"/>
+    </filter>
+    <!-- 空の内側。上ほど薄く、最終的な液面（y≈432）で不透明に戻る -->
+    <linearGradient id="inside" gradientUnits="userSpaceOnUse" x1="0" y1="262" x2="0" y2="432">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.12"/>
+      <stop offset="0.7" stop-color="#fff" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="1"/>
+    </linearGradient>
+    <!-- 注ぎの筋。左右に揺れる幅（x≈290〜320）を覆い、両端をぼかす -->
+    <linearGradient id="band" gradientUnits="userSpaceOnUse" x1="284" y1="0" x2="328" y2="0">
+      <stop offset="0" stop-color="#fff" stop-opacity="0"/>
+      <stop offset="0.28" stop-color="#fff" stop-opacity="1"/>
+      <stop offset="0.72" stop-color="#fff" stop-opacity="1"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="bandIn" gradientUnits="userSpaceOnUse" x1="294" y1="0" x2="320" y2="0">
+      <stop offset="0" stop-color="#fff" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#fff" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="topfade" gradientUnits="userSpaceOnUse" x1="0" y1="20" x2="0" y2="150">
+      <stop offset="0" stop-color="#000"/>
+      <stop offset="1" stop-color="#fff"/>
+    </linearGradient>
+    <mask id="streamTop">
+      <rect width="540" height="766" fill="url(#topfade)"/>
+    </mask>
+  </defs>
+
+  <g filter="url(#soft)">
+    <!-- 外形から空の内側をくり抜く（evenodd）。縁の帯と、液面より下は不透明のまま残る -->
+    <path fill="#fff" fill-rule="evenodd" d="
+      M144 248 C145 290 148 330 152 372 C156 420 164 462 176 496 C188 528 206 548 228 560
+      C240 566 252 568 256 572 L255 606 C252 620 236 632 206 642 C186 648 170 652 162 656
+      A116 14 0 0 0 394 656 C386 652 370 648 350 642 C320 632 304 620 301 606 L300 572
+      C304 568 316 566 328 560 C350 548 368 528 380 496 C392 462 400 420 404 372
+      C408 330 411 290 412 248 A134 12 0 0 0 144 248 Z
+      M154 256 A124.5 13 0 0 0 403 256 C402 290 399 330 395 372 C393 400 391 418 389 432
+      L167 432 C165 418 163 400 161 372 C158 330 155 290 154 256 Z"/>
+    <!-- くり抜いた内側を、上ほど薄く埋め戻す -->
+    <path fill="url(#inside)" d="
+      M154 256 A124.5 13 0 0 0 403 256 C402 290 399 330 395 372 C393 400 391 418 389 432
+      L167 432 C165 418 163 400 161 372 C158 330 155 290 154 256 Z"/>
+  </g>
+
+  <!-- 注ぎの筋（縁より上）。左右に揺れる幅ぶんを見せる -->
+  <rect x="284" y="0" width="44" height="268" fill="url(#band)" mask="url(#streamTop)"/>
+  <!-- 縁より下は帯を細くする。広いままだと筋の後ろの玉ボケまでガラス越しに残る -->
+  <rect x="294" y="262" width="26" height="176" fill="url(#bandIn)"/>
+</svg>

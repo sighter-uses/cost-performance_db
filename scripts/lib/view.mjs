@@ -153,12 +153,18 @@ img{max-width:100%}
   /* FLIPの中心計算が原点に依存するので、原点は必ず中央に置くこと */
   transform-origin:50% 50%;will-change:transform,opacity}
 .glass{position:relative;width:100%;aspect-ratio:540/766;overflow:hidden}
-.glass-video{display:block;width:100%;height:100%;object-fit:cover;background:#070605}
-/* 四角い映像の縁を地に溶かす。
-   上から暗い色を重ねる方法だと、背後の色が変わる場所で境目が出る。
-   映像そのものを mask で透明に落とすほうが、どこに置いても馴染む。 */
-.glass{-webkit-mask-image:radial-gradient(68% 60% at 50% 47%,#000 52%,rgba(0,0,0,.72) 76%,transparent 99%);
-  mask-image:radial-gradient(68% 60% at 50% 47%,#000 52%,rgba(0,0,0,.72) 76%,transparent 99%)}
+.glass-video{display:block;width:100%;height:100%;object-fit:cover;background:transparent}
+/* 映像の背景を落とす。グラスの輪郭の形をした型（glass-mask.svg）を映像に掛け、
+   グラス・液体・注ぎの筋だけを残す。カメラ固定でグラスが動かないので、1枚の型で全フレームに効く。
+   縁をぼかすだけの方法では、机や玉ボケが四角く残って「背景ごと貼った」ように見えた。
+   型と映像の座標系（540×766）を揃えるため、.glass の比率は映像と同じにしておくこと。 */
+.glass{-webkit-mask:url(/assets/glass-mask.svg) center/100% 100% no-repeat;
+  mask:url(/assets/glass-mask.svg) center/100% 100% no-repeat}
+/* 背景を落とすとグラスが宙に浮くので、台に落ちる影と、液体を抜けた光の溜まりを足す */
+.glass-slot::after{content:'';position:absolute;left:22%;right:22%;bottom:2.5%;height:6%;z-index:-1;
+  background:radial-gradient(closest-side,rgba(0,0,0,.6),rgba(0,0,0,0)),
+    radial-gradient(closest-side,rgba(214,130,52,.28),rgba(214,130,52,0)) 0 -6px/100% 140% no-repeat;
+  filter:blur(3px);pointer-events:none}
 /* 演出中は背後に光を置き、縁の溶かしを弱める */
 .glass-slot::before{content:'';position:absolute;inset:-22% -34% -14%;z-index:-1;opacity:0;
   background:radial-gradient(52% 44% at 50% 56%,rgba(226,150,66,.46),rgba(226,150,66,0) 70%);
